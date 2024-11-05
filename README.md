@@ -5,7 +5,7 @@ Cultura leverages NLP and procedural generation to create cultural artifacts tha
 
 Step 1: Data Acquisition
   Datasets Used:
-    Historical texts, artifacts, and linguistic corpora relevant to the civilizations being studied.
+    Historical texts, artifacts, and linguistic stuff relevant to the civilizations being studied.
     Publicly available datasets, such as Project Gutenberg for historical texts and cultural datasets from academic repositories.
 
 Step 2: Preprocessing
