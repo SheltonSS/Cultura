@@ -1,0 +1,12 @@
+exp: MinimalPair
+
+mode: 
+    - analyze
+
+predfpath: ./predictions/cultura_minimal_pairs.tsv
+
+datafpath: ./data/cultura_minimal_pairs.tsv
+
+resultsfpath: ./results/cultura_minimal_pairs.tsv
+
+k_lemmas: 1
