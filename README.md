@@ -1,6 +1,8 @@
 # Cultura
-Cultura leverages NLP and procedural generation to create cultural artifacts that reflect the evolution and diversity of civilizations Using historical and linguistic data, Cultura generates texts that embody cultural shifts over timein order to explore how computational models can simulate nuanced realistic cultural identities.
+  Cultura leverages NLP and procedural generation to create cultural artifacts that reflect the evolution and diversity of civilizations Using historical and linguistic data, Cultura generates texts that embody cultural shifts over timein order to explore how computational models can simulate nuanced realistic cultural identities.
 
+# High Level Overview
+  
 # Workflow Overview
 
   Step 1: Data Acquisition
@@ -45,6 +47,8 @@ Cultura leverages NLP and procedural generation to create cultural artifacts tha
       If outputs lack authenticity or fail to capture cultural nuances, this indicates the need for more diverse training data or model adjustments.
       Conclusion from Negative Results:
         Further refinement of the model and preprocessing steps, ensuring improved cultural representation in future iterations.
+
+
 
 
 
