@@ -8,6 +8,17 @@ Step 1: Data Acquisition
     Historical texts, artifacts, and linguistic stuff relevant to the civilizations being studied.
     Publicly available datasets, such as Project Gutenberg for historical texts and cultural datasets from academic repositories.
 
+https://www.mythologydatabase.com/  - Contains short stories, legends, and folk tales from different cultures.
+Stuff like Greek, Roman, Norse Mythology Texts, but also stuff from other culture to get a sense of how to write legends and myths in that old writing style
+Religious Texts
+https://biblepdf.neocities.org/King%20James%20Version.pdf - different versions of the bible
+https://m.clearquran.com/ -  the quran in english
+https://ota.bodleian.ox.ac.uk/repository/xmlui/ - The Oxford Text Archive
+Has a bunch of really old stuff
+https://www.kaggle.com/datasets/bryanb/phrases-and-sayings/data - a bunch of proverbs 
+https://www.gutenberg.org/ -  a bunch of public domain literature,
+
+
 Step 2: Preprocessing
 Preprocessing Steps:
   Data cleaning (removing noise, irrelevant entries).
