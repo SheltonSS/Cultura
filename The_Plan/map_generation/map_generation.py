@@ -1,27 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from noise import pnoise2
-import random
 
 # Map settings
-width, height = 200, 200  # Size of the map
-scale = random.uniform(20.0, 50.0)  
-octaves = random.randint(4, 8)      
-persistence = random.uniform(0.4, 0.6)
-lacunarity = 2.0 
-
-# Generate a random seed for unique map generation
-random_seed = random.randint(0, 10000)
+map_size = (200, 200)
+width, height = map_size 
+scale = 40.0
+octaves = 6
+persistence = 0.5
+lacunarity = 2.0
 
 # Generate the height map using Perlin noise with vectorized operations
-def generate_height_map(width, height, scale, octaves, persistence, lacunarity, base):
+def generate_height_map(width, height, scale, octaves, persistence, lacunarity):
     x_indices = np.arange(height) / scale
     y_indices = np.arange(width) / scale
     x_grid, y_grid = np.meshgrid(x_indices, y_indices, indexing='ij')
 
     height_map = np.vectorize(lambda x, y: pnoise2(
         x, y, octaves=octaves, persistence=persistence, lacunarity=lacunarity,
-        repeatx=width, repeaty=height, base=base
+        repeatx=width, repeaty=height, base=42
     ))(x_grid, y_grid)
     
     return height_map
@@ -40,7 +37,7 @@ def classify_terrain(normalized_map):
     return terrain_map
 
 # Generate and classify the map
-height_map = generate_height_map(width, height, scale, octaves, persistence, lacunarity, random_seed)
+height_map = generate_height_map(width, height, scale, octaves, persistence, lacunarity)
 normalized_map = normalize_map(height_map)
 terrain_map = classify_terrain(normalized_map)
 
@@ -48,6 +45,6 @@ terrain_map = classify_terrain(normalized_map)
 plt.figure(figsize=(10, 10))
 plt.imshow(normalized_map, cmap='terrain', interpolation='bicubic')
 plt.colorbar(label='Height')
-plt.title('Randomly Generated 2D World Map with Natural Features')
+plt.title('Procedurally Generated 2D World Map with Natural Features')
 
 plt.show()
