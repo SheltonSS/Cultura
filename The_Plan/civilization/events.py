@@ -57,7 +57,8 @@ Events = {
             "Alliance Formed",
             "Peace Treaty",
             "Tribute Received",
-            "War Won"
+            "War Won",
+            "favorable trade agreement",
         ],
         
         "Negative": [
@@ -82,6 +83,34 @@ Events = {
             "Resource Scarcity",
             "Debt Crisis",
             "Rampant Inflation"
+        ]
+    },
+    
+    "Inter-Civilization Interaction": {
+        "Positive": [
+            "Cultural Exchange",
+            "Joint Scientific Research",
+            "Mutual Defense Pact",
+            "Shared Religious Ceremony",
+            "Technological Collaboration",
+            "Resource Sharing Agreement",
+            "Trade Route Established",
+            "Joint Festival Celebration",
+            "Environmental Preservation Alliance",
+            "Diplomatic Delegation Visit"
+        ],
+        
+        "Negative": [
+            "Border Conflict",
+            "Resource Dispute",
+            "Espionage Operation Discovered",
+            "Religious Tension",
+            "Failed Negotiations",
+            "Accidental Skirmish",
+            "Cultural Misunderstanding",
+            "Technology Theft Incident",
+            "Trade Route Sabotage",
+            "Breakdown of Diplomatic Relations"
         ]
     }
 }
