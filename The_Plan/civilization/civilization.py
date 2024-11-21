@@ -4,6 +4,7 @@ import torch
 from dotenv import load_dotenv
 import os
 import openai
+import config
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -28,6 +29,7 @@ class Civilization:
         self.tech_level = tech_level
         self.traits = self.assign_traits()
         self.cultural_context = self.generate_cultural_context()
+        self.artifacts = {"Cultural Artifacts": []}
 
     def assign_traits(self):
         """Assign traits based on terrain type and random factors."""
@@ -46,7 +48,7 @@ class Civilization:
         """Create a description of the civilization's culture based on traits and tech level."""
         context = f"{self.name} is a civilization located in a {self.get_terrain_description()} region. "
         context += f"They are known for being {' and '.join(self.traits[:-1])}, with a particularly {self.traits[-1]} nature. "
-        context += f"With a technology level of {self.tech_level}/9."
+        context += f"With a technology level of {config.Tech_eras[self.tech_level]}."
         return context
 
     def get_terrain_description(self):
@@ -61,36 +63,41 @@ class Civilization:
         return descriptions.get(self.terrain_type, "unknown terrain")
 
     
-    def generate_cultural_artifacts(self, model="gpt-4", max_tokens=200, temperature=0.7):
+    def generate_cultural_artifacts(self, model="gpt-4", max_tokens=200, temperature=0.7,gen_type=0):
         """
         Generates a unique cultural artifact description using ChatGPT.
         """
+        # prompt ==============================================================
         prompt = f"""
-        Describe a unique cultural artifact, including its purpose and significance using the following cultural context:
-        {self.cultural_context}
+        Describe a unique cultural artifact of type '{random.choice(config.artifact_types)}' made during the {config.Tech_eras[self.tech_level]} era, including its purpose and significance, using the following cultural context:
 
-        The cultural artifact should be a natural.
-        Here are thet general definitions for the technological eras:
-        1:Ancient
-        2:Classical
-        3:Medieval
-        4:Renaissance
-        5:Industrial
-        6:Modern
-        7:Atomic
-        8:Information
-        9:Future
+        Civilization Name: {self.name}
+        Region: {self.terrain_type}
+        Traits: {', '.join(self.traits)}
+
+        The civilization is known for those qualities, which should influence the cultural artifact generated. Consider how these traits, the environment, and the technology level might impact the design, purpose, and significance of the artifact.
+
+        Here are the general definitions for the technological eras:
+
+            {config.Tech_eras_string}
 
         The response should be in the following json format:
-            Name
-            Creation Date
-            Description 
-            purpose
-            Significance
+
+            {config.json_format}
+
+        Be sure to integrate and weve aspects of the civilization into the artifact, select aspecsts of their values, environment, and technological level should shape the artifact's form and function.
         """
-        
+
+        if gen_type == 1:
+            prompt += f"""\n
+
+            The response should also take into consideration the following history of the civilization:
+
+            """
+
+        #query Model =======================================================
         try:
-            # Query the ChatGPT model
+            # query the model
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
@@ -98,7 +105,7 @@ class Civilization:
                 temperature=temperature,
             )
             
-            # Extract and return the artifact description
+            # return the artifact description
             return response['choices'][0]['message']['content']
         
         except Exception as e:
@@ -106,18 +113,11 @@ class Civilization:
 
 # Example Integration
 if __name__ == "__main__":
-    # Simulate a terrain map with a few civilization placements
-    terrain_map = [
-        [1, 1, 0, 3, 5],
-        [1, 2, 2, 3, 5],
-        [0, 1, 1, 2, 5],
-    ]
-    
     # Randomly assign civilization locations and traits
     civ1 = Civilization(
         name="Thalrathians",
         location=(1, 1),
-        terrain_type=terrain_map[1][1],
+        terrain_type=config.terrain_map[1][1],
         tech_level=random.randint(1, 9)
     )
     
@@ -126,11 +126,6 @@ if __name__ == "__main__":
     print(f"Description: {civ1.cultural_context}")
     print("\n================\n")
     
-    # Load tokenizer and model
-    # model_name = "meta-llama/Llama-3.2-1B-Instruct"
-    # tokenizer = AutoTokenizer.from_pretrained(model_name)
-    # model = AutoModelForCausalLM.from_pretrained(model_name)
-
     # Generate cultural artifacts
     artifacts = civ1.generate_cultural_artifacts()
     print(f"\nCultural Artifacts: {artifacts}")
