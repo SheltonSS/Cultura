@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import os
 import openai
 import config
+# from events.event_pseicker import select_event
+from event_picker import select_event  # Import the dictionary directly
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -30,6 +32,9 @@ class Civilization:
         self.traits = self.assign_traits()
         self.cultural_context = self.generate_cultural_context()
         self.artifacts = {"Cultural Artifacts": []}
+        self.history = []
+        self.history.append(f"Founded { self.name } in a { self.get_terrain_description() } region during the { config.Tech_eras[self.tech_level] } era.")
+        self.progress_point_limit = 10
 
     def assign_traits(self):
         """Assign traits based on terrain type and random factors."""
@@ -63,7 +68,7 @@ class Civilization:
         return descriptions.get(self.terrain_type, "unknown terrain")
 
     
-    def generate_cultural_artifacts(self, model="gpt-4", max_tokens=200, temperature=0.7,gen_type=0):
+    def generate_cultural_artifacts(self, model="gpt-4", max_tokens=400, temperature=0.7,gen_type=0):
         """
         Generates a unique cultural artifact description using ChatGPT.
         """
@@ -93,6 +98,8 @@ class Civilization:
 
             The response should also take into consideration the following history of the civilization:
 
+            {', '.join(self.history)}
+
             """
 
         #query Model =======================================================
@@ -106,26 +113,116 @@ class Civilization:
             )
             
             # return the artifact description
+            self.artifacts["Cultural Artifacts"].append(response['choices'][0]['message']['content'])
             return response['choices'][0]['message']['content']
         
         except Exception as e:
             return f"Error generating artifact: {e}"
+        
+    def progress_era(self):
+        """
+        Progress the civilization to the next technological era. This increases tech level,
+        may add or remove traits, and updates the cultural context.
+        """
+        # Increase tech level
+        if self.tech_level < 9:
+            self.tech_level += 1
+            print(f"{self.name} has progressed to the {config.Tech_eras[self.tech_level]} era.")
+            self.history.append(f"{self.name} has progressed to the {config.Tech_eras[self.tech_level]} era.")
 
+
+        # Add or remove traits
+        if random.random() > 0.5:  # 50% chance to gain a new trait
+            new_trait = random.choice(["Visionary", "Pragmatic", "Ambitious", "Altruistic"])
+            if new_trait not in self.traits:
+                self.traits.append(new_trait)
+                self.history.append(f"{self.name} has gained a new trait: {new_trait}")
+                print(f"{self.name} has gained a new trait: {new_trait}")
+
+        if len(self.traits) > 3 and random.random() > 0.7:  # 30% chance to lose a random trait
+            removed_trait = random.choice(self.traits)
+            self.traits.remove(removed_trait)
+            self.history.append(f"{self.name} has lost a trait: {removed_trait}")
+            print(f"{self.name} has lost a trait: {removed_trait}")
+
+        # Update cultural context
+        self.cultural_context = self.generate_cultural_context()
+
+    def regress_era(self):
+        """
+        Regress the civilization to a previous technological era. This decreases the tech level
+        and may remove traits, reflecting a decline in progress.
+        """
+        # Decrease tech level
+        if self.tech_level > 1:
+            self.tech_level -= 1
+            print(f"{self.name} has regressed back to the {config.Tech_eras[self.tech_level]} era.")
+            self.history.append(f"{self.name} has regressed back to the {config.Tech_eras[self.tech_level]} era.")
+
+
+        # Remove traits with some probability
+        if len(self.traits) > 3 and random.random() > 0.5:  # 50% chance to lose a trait
+            removed_trait = random.choice(self.traits)
+            self.traits.remove(removed_trait)
+            self.history.append(f"{self.name} has lost a trait: {removed_trait}")
+            print(f"{self.name} has lost a trait: {removed_trait}")
+
+        # Update cultural context
+        self.cultural_context = self.generate_cultural_context()
+
+    def progress_age(self):
+        pp = 0
+        while self.tech_level < 9 and pp < self.progress_point_limit:
+            selected_event = select_event()
+            pos = 0
+            neg = 0
+            if selected_event["Outcome"] == "positive":
+                pos += 1
+            else:
+                neg += 1
+            pp+=1
+            self.history.append(f"{selected_event['Outcome']} {selected_event['EventType']}: {selected_event['Event']}")
+        
+        if pos > neg:
+            self.progress_era()
+        elif pos < neg:
+            self.regress_era()
+
+        print("\n================\n")
+        for i in self.history:
+            print(i)
+        # print(self.history)
+
+                
 # Example Integration
 if __name__ == "__main__":
     # Randomly assign civilization locations and traits
+    location = (1, 1)
     civ1 = Civilization(
-        name="Thalrathians",
-        location=(1, 1),
-        terrain_type=config.terrain_map[1][1],
-        tech_level=random.randint(1, 9)
+        name="Gendaria",
+        location=location,
+        terrain_type=config.terrain_map[location[0]][location[1]],
+        tech_level=random.randint(1, 5)
     )
-    
-    print(f"Traits of {civ1.name}: {civ1.traits}")
-    print()
     print(f"Description: {civ1.cultural_context}")
+    print()
+    print(f"Traits of {civ1.name}: {civ1.traits}")
+
+    civ1.progress_age()
     print("\n================\n")
-    
     # Generate cultural artifacts
-    artifacts = civ1.generate_cultural_artifacts()
+    artifacts = civ1.generate_cultural_artifacts(gen_type=1)
     print(f"\nCultural Artifacts: {artifacts}")
+    # print(select_event())
+    # Progress the civilization
+    # for i in range(3):
+    #     civ1.progress_era()
+        # print(f"\nProgressed Civilization:\n{civ1.cultural_context}")
+        # print("\n================")
+
+    # Regress an era
+    # civ1.regress_era()
+    # print(f"\nRegressed Civilization:\n{civ1.cultural_context}")
+    # print("\n================\n")
+
+
