@@ -13,7 +13,7 @@ class TerrainMap:
         self.octaves = octaves
         self.persistence = persistence
         self.lacunarity = lacunarity
-        self.seed = seed or random.randint(1, 500)
+        self.seed = seed or random.randint(1, 250)
         self.height_map = None
         self.normalized_map = None
         self.terrain_map = None
@@ -47,8 +47,8 @@ class TerrainMap:
         terrain_map[self.normalized_map >= 0.7] = 3  # Mountains
         
         # Tundra at the poles
-        terrain_map[:20, :] = 5  # Tundra at the top
-        terrain_map[-20:, :] = 5  # Tundra at the bottom
+        # terrain_map[:20, :] = 5  # Tundra at the top
+        # terrain_map[-20:, :] = 5  # Tundra at the bottom
         
         self.terrain_map = terrain_map
 
@@ -67,7 +67,7 @@ class TerrainMap:
             (0.6, 0.5, 0.2),  # Hills - brown
             (0.5, 0.5, 0.5),  # Mountains - gray
             (0.2, 0.6, 0.3),  # Forests - dark green
-            (0.7, 0.9, 0.9)   # Tundra - light blue
+            # (0.7, 0.9, 0.9)   # Tundra - light blue
         ])
 
         plt.figure(figsize=(10, 10))
@@ -78,6 +78,6 @@ class TerrainMap:
 
 # Example usage
 if __name__ == "__main__":
-    terrain = TerrainMap(width=200, height=200)
+    terrain = TerrainMap(width=400, height=400)
     terrain.generate(smooth_sigma=3)
     terrain.visualize()

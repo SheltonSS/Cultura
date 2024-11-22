@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 import os
 import openai
 import config
-# from event_picker import select_event
+import math
 import event_picker
 import misc
-
+import json
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
@@ -18,7 +18,9 @@ if not openai.api_key:
 class Civilization:
     Civilizations = []
     Default_R = 5
+    Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
+    progress_point_limit = 10
     def __init__(self, name, location, terrain_type, tech_level):
         """
         Initialize a civilization with traits and a location.
@@ -38,7 +40,7 @@ class Civilization:
         self.artifacts = {"Cultural Artifacts": []}
         self.history = []
         self.history.append(f"Founded { self.name } in a { self.get_terrain_description() } region during the { config.Tech_eras[self.tech_level] } era.")
-        self.progress_point_limit = 10
+        # self.progress_point_limit = 10
         self.neighbors = []
         self.neighbor_history = []
         # self.radius = Civilization.Default_R
@@ -94,13 +96,13 @@ class Civilization:
         }
         return descriptions.get(self.terrain_type, "unknown terrain")
 
-    
+        
     def generate_cultural_artifacts(self, model="gpt-4", max_tokens=400, temperature=0.7, generation_type=0):
         """
         Generates a unique cultural artifact description using ChatGPT.
         """
-        # Construct prompt
-        prompt = f"""
+        # Construct prompt | regular generation mode
+        prompt = f""" 
         Describe a unique cultural artifact of type '{random.choice(config.artifact_types)}' made during the {config.Tech_eras[self.tech_level]} era, including its purpose and significance, using the following cultural context:
 
         Civilization Name: {self.name}
@@ -120,13 +122,13 @@ class Civilization:
         Be sure to integrate aspects of the civilization into the artifact, selecting aspects of their values, environment, and technological level to shape the artifact's form and function.
         """
 
-        if generation_type == 1:
+        if generation_type == 1: # history generation mode
             prompt += f"""
             The response should also take into consideration the following history of the civilization:
 
             {', '.join(self.history)}
             """
-        if generation_type == 2:
+        if generation_type == 2: # neighbor generation mode
             prompt += f"""
                 - Neighboring Civilizations: {[neighbor.cultural_context for neighbor in self.neighbors]}
 
@@ -139,17 +141,32 @@ class Civilization:
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=max_tokens,
-                temperature=temperature,
+                temperature=temperature
+                # logprobs=True, 
             )
-            
-            # Append and return the artifact description
+
+            # Extract the artifact description
+            # print(json.dumps(response['choices'][0]['logprob'], indent=4))
+            # print (str(response['choices'][0]['logprobs'])[:200])
+            # print(str(response['choices'][0]['logprobs']["content"]))
             artifact_description = response['choices'][0]['message']['content']
+            # TO DO CHECK ADD TOKEN LOBPROB FROM ABOVE POINT
+            # Extract log probabilities and calculate perplexity
+            # logprobs = response['choices'][0]['logprobs']['token_logprobs']
+            # num_tokens = len(logprobs)  # Number of tokens
+            # log_sum = sum(logprobs)  # Sum of log probabilities
+
+            # Calculate perplexity
+            # perplexity = math.exp(-log_sum / num_tokens)
+            # print(f"Perplexity: {perplexity}")
+
+            # Append the artifact description to the civilization's artifacts
             self.artifacts["Cultural Artifacts"].append(artifact_description)
+
             return artifact_description
-        
+
         except Exception as error:
             return f"Error generating artifact: {error}"
-        
     def progress_era(self):
         """
         Progress the civilization to the next technological era. This increases tech level,
@@ -210,7 +227,7 @@ class Civilization:
         positive_outcomes = 0
         negative_outcomes = 0
 
-        while self.tech_level < len(config.Tech_eras) and progress_points < self.progress_point_limit:
+        while self.tech_level < len(config.Tech_eras) and progress_points < Civilization.progress_point_limit:
             event = event_picker.select_event()
             
             if event["Outcome"] == "Positive":
@@ -226,9 +243,10 @@ class Civilization:
         elif positive_outcomes < negative_outcomes:
             self.regress_era()
 
-        print("\n================\n")
+        print(f"\n ================================\ History for {self.name}: /================================\n")
         for history_entry in self.history:
             print(history_entry)
+
 
     def interact_with_neighbors(self):
         """
@@ -237,7 +255,7 @@ class Civilization:
         :return: None
         """
         neighbor_interaction_limit = 5
-        cultural_crossing_limit = neighbor_interaction_limit / 2  # Fixed typo
+        cultural_crossing_limit = neighbor_interaction_limit // 2  # Fixed typo
 
         positive_interactions = 0
         negative_interactions = 0
@@ -259,7 +277,7 @@ class Civilization:
                         neighbor.traits.append(self_trait)
 
                         positive_interactions -= negative_interactions
-                        negative_interactions /= 2
+                        negative_interactions = negative_interactions // 2
                         
                         criss_cross = f"Repeated positive exposure has resulted in a cultural exchange between {self.name} and {neighbor.name}.\n{self.name} received the {neighbor_trait} trait from {neighbor.name} and {neighbor.name} received the {self_trait} trait from {self.name}."
                 else:
@@ -273,12 +291,22 @@ class Civilization:
                     self.neighbor_history.append(criss_cross)
                     neighbor.neighbor_history.append(criss_cross)
                     criss_cross = ""
-
-
         # Print the neighbor history for this civilization
         print("\n================\n")
         for history_entry in self.neighbor_history:
             print(history_entry)
+    def progress_and_interact_all_civilizations():
+        "Running the simulation for all civilizations..."
+        for civilization in Civilization.Civilizations:
+            civilization.progress_age()
+            artifcat = civilization.generate_cultural_artifacts()
+            print(f"\n: {artifcat} :")
+            misc.save_generated_artifact(artifcat) 
+            civilization.interact_with_neighbors()
+            artifcat = civilization.generate_cultural_artifacts(generation_type=2)
+            print(f"\n: {artifcat} :")
+            misc.save_generated_artifact(artifcat) 
+            
 
             
 

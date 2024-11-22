@@ -31,7 +31,7 @@ def save_generated_artifact(generated_text, filename="artifact.jsonl"):
             json.dump(artifact_data, file)
             file.write("\n")
         
-        print(f"Artifact saved successfully to {filename}")
+        # print(f"Artifact saved successfully to {filename}")
     
     except Exception as e:
         print(f"An error occurred: {e}")
