@@ -6,6 +6,7 @@ import config
 import event_picker
 import misc
 import map_generation
+import json
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -13,22 +14,24 @@ if not openai.api_key:
     raise ValueError("OpenAI API key is not set. Check the '.env' file or the 'OPENAI_API_KEY' variable. Stupid.")
 
 class Civilization:
+    map = map_generation.TerrainMap()
     Civilizations = []
-    Default_R = 5
+    # Default_R = 5
+    Default_R =int(min(map.width, map.height) * 1)
     Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
     progress_point_limit = 5
     current_year = -4000
     year_progression = 50
     # print("class map generation")
-    map = map_generation.TerrainMap()
+    existing_artifacts = []
 
     @staticmethod
     def get_string_year():
         """Return the current year in human-readable format."""
         return f"{abs(Civilization.current_year)} {'BC' if Civilization.current_year < 0 else 'AD'}"
 
-    def __init__(self, name, location, terrain_type, tech_level):
+    def __init__(self, name, location, tech_level = 0):
         """
         Initialize a civilization with traits and a location.
         
@@ -40,31 +43,32 @@ class Civilization:
         """
         self.name = name
         self.location = location
-        self.terrain_type = terrain_type
+        # self.terrain_type = terrain_type
+        self.terrain_type = Civilization.map.get_terrain_map()[location[0]][location[1]] 
         self.tech_level = tech_level
         self.traits = self.assign_traits()
         self.cultural_context = self.generate_cultural_context()
-        self.artifacts = {"Cultural Artifacts": []}
+        self.artifacts = {"Historical artifacts": [], "Interaction artifacts": []}
         self.history = []
         self.history.append(f"Founded { self.name } in a { self.get_terrain_description() } region during the { config.Tech_eras[self.tech_level] } era.")
         self.neighbors = []
         self.neighbor_history = []
 
         # Update civilization-wide properties
-        Civilization.Default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
+        # Civilization.Default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
         Civilization.year_progression = Civilization.calculate_year_progression()
         Civilization.Civilizations.append(self)
 
         # Find neighbors
         for civ in Civilization.Civilizations:
-            civ.find_neighbors(Civilization.Default_R)
+            civ.find_neighbors()
 
     def assign_traits(self):
         """Assign traits based on terrain type and random factors."""
         random_trait = random.choice(["Innovative", "Tradition-Oriented", "Expansive", "Artistic"])
         return config.base_traits.get(self.terrain_type, ["Undefined"]) + [random_trait]
     
-    def find_neighbors(self, radius):
+    def find_neighbors(self):
         """
         Find and add civilizations within a given radius to the neighbors list.
 
@@ -74,9 +78,10 @@ class Civilization:
         self.neighbors = []
         for civ in Civilization.Civilizations:
             if civ != self:
-                distance = misc.calculate_distance(self.location, civ.location)
-                if distance <= radius:
-                    self.neighbors.append(civ)
+                # TO FIX
+                # distance = misc.calculate_distance(self.location, civ.location)
+                # if distance <= Civilization.Default_R:
+                self.neighbors.append(civ)
 
     def blend_cultures(self, artifact_traits):
         for neighbor in self.neighbors:
@@ -106,19 +111,17 @@ class Civilization:
         }
         return descriptions.get(self.terrain_type, "unknown terrain")
 
-    def generate_cultural_artifacts(self, model="gpt-3.5-turbo", max_tokens=350, temperature=0.7, generation_type=1):
+    def generate_cultural_artifacts(self, model="gpt-3.5-turbo", max_tokens=350, temperature=0.7, generation_type="history"):
         """Generate a unique cultural artifact description using ChatGPT."""
         # regular generation mode
         prompt = f""" 
-        Describe a unique cultural artifact of type '{random.choice(config.artifact_types)}' made during the {config.Tech_eras[self.tech_level]} era, including its purpose and significance, using the following cultural context:
+        Describe a unique cultural artifact of type '{random.choice(config.artifact_types)}' made during the {config.Tech_eras[self.tech_level]} era, including its purpose, using the following cultural context:
 
         Civilization Name: {self.name}
         Region: {self.get_terrain_description()}
         Traits: {', '.join(self.traits)}
-
-        Here are the general definitions for the technological eras:
-
-        {config.Tech_eras_string}
+        Tech Level: {config.Tech_eras[self.tech_level]}
+        Current Time Period: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)}{'BC' if Civilization.current_year + Civilization.year_progression < 0 else 'AD'}
 
         The response should be in the following JSON format:
 
@@ -126,16 +129,19 @@ class Civilization:
 
         Be sure to integrate aspects of the civilization into the artifact, selecting aspects of their values, environment, and technological level to shape the artifact's form and function.
 
-        Current Time Period: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)}{'BC' if Civilization.current_year + Civilization.year_progression < 0 else 'AD'}
         """
 
-        if generation_type == 1:  # history generation mode
-            prompt += f"The response should also consider the civilization's history: {', '.join(self.history)}"
-        if generation_type == 2:  # neighbor generation mode
-            prompt += f"Neighboring Civilizations: {[neighbor.cultural_context for neighbor in self.neighbors]}"
+        if generation_type == "history":  # history generation mode
+            prompt += f"\nThe response should also consider the civilization's history: {', '.join(self.history)}"
+        if generation_type == "neighbor":  # neighbor generation mode
+            if len(self.neighbors) == 0:
+                raise ValueError("No neighbors found for this civilization.")
+            prompt += "\nThe response should also consider the civilization's interactions with neighboring civilizations:"
+            # prompt += f"\nNeighboring Civilizations:\n {[neighbor.cultural_context for neighbor in self.neighbors]}"
             
-            prompt += f"Neighboring Civilizations Interaction History: {', '.join(self.neighbor_history)}"
+            prompt += f"\nNeighboring Civilizations Interaction History:\n {', '.join(self.neighbor_history)}"
 
+        # print (prompt)
         try:
             response = openai.ChatCompletion.create(
                 model=model,
@@ -144,19 +150,27 @@ class Civilization:
                 temperature=temperature
             )
 
-            artifact_description = response['choices'][0]['message']['content']
-            # print("\ndescription", artifact_description)
             year_made_I = random.randint(Civilization.current_year, Civilization.current_year + Civilization.year_progression)
-            year_made = f'"Year Made": "{abs(year_made_I)} {"BC" if year_made_I < 0 else "AD"}"'
-            year_made+= "}"
-            # print(f"\n{artifact_description[:artifact_description.find('}')]},\n{year_made}")
-            artifact_description = f"{artifact_description[:artifact_description.find('}')]},\n{year_made}"
-            self.artifacts["Cultural Artifacts"].append(artifact_description)
+            artifact_data = json.loads(response['choices'][0]['message']['content'])
+            artifact_data["Year Made"] = f"{abs(year_made_I)} {'BC' if year_made_I  < 0 else 'AD'}"
+            artifact_description = json.dumps(artifact_data, indent=2)
 
+            if generation_type == "history":
+                self.artifacts["Historical artifacts"].append(artifact_description)
+            elif generation_type == "neighbor":
+                self.artifacts["Interaction artifacts"].append(artifact_description)
+            else:
+                print(f"Unknown generation type: {generation_type}")
+
+            Civilization.existing_artifacts.append(artifact_description)
+            print (f"\nArtifact: {artifact_description}")
             return artifact_description
 
-        except Exception as error:
-            return f"Error generating artifact: {error}"
+        except openai.error.OpenAIError as e:
+            return f"OpenAI API error: {e}"
+        except Exception as e:
+            return f"Unexpected error: {e}"
+
         
     def progress_era(self):
         """Progress the civilization to the next technological era."""
@@ -288,7 +302,7 @@ class Civilization:
                 print(f"Generated Historical Artifact: {artifact}")
                 misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
-                artifact = civilization.generate_cultural_artifacts(generation_type=2)
+                artifact = civilization.generate_cultural_artifacts(generation_type = "neighbor")
                 print(f"Generated Interaction Artifact: {artifact}")
                 misc.save_generated_artifact(artifact)
 

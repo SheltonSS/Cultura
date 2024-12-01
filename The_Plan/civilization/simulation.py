@@ -9,33 +9,61 @@ if __name__ == "__main__":
     # Randomly assign civilization locations and traits
     # Civilizations 
     # This is a workshop to test the simulation
-    map = Civilization.map
-    Civilization.default_R = int(min(Civilization.map.width, Civilization.map.height) * 1)
+    used_names = set()
+    used_locations = set()
 
-    location = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
+    map = Civilization.map
+    Civilization.default_R = int(min(Civilization.map.width, Civilization.map.height) * 1)  # Test range set to the whole map
+
+    # Generate civ1
+    while True:
+        name = random.choice(config.civ_names)
+        if name not in used_names:
+            used_names.add(name)
+            break
+
+    while True:
+        location = (
+            random.randint(0, len(Civilization.map.get_terrain_map()) - 1),
+            random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1),
+        )
+        if location not in used_locations:
+            used_locations.add(location)
+            break
+
     civ1 = Civilization(
-        name="Shelleian",
+        name=name,
         location=location,
-        terrain_type=Civilization.map.get_terrain_map()[location[0]][location[1]],
-        # tech_level=random.randint(0, len(config.Tech_eras) - 1)
-        tech_level=0
     )
 
-    location2 = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
-    while location2 == location:
-            location2 = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
+    # Generate civ2
+    while True:
+        name = random.choice(config.civ_names)
+        if name not in used_names:
+            used_names.add(name)
+            break
 
+    while True:
+        location2 = (
+            random.randint(0, len(Civilization.map.get_terrain_map()) - 1),
+            random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1),
+        )
+        if location2 not in used_locations:
+            used_locations.add(location2)
+            break
 
     civ2 = Civilization(
-        name="Novile",
+        name=name,
         location=location2,
-        terrain_type=Civilization.map.get_terrain_map()[location2[0]][location2[1]],
-        # tech_level=random.randint(0, len(config.Tech_eras) - 1)
-        tech_level=0
     )
+
+    print(f"Civilization 1: {civ1.name} , {civ1.location}")
+    print(f"Civilization 2: {civ2.name} , {civ2.location}")
 
     Civilization.progress_and_interact_all_civilizations(steps=10)    
 
+    # Print civilizations summation
+    print("\n===============================\nCivilizations:")
     for civ in Civilization.Civilizations:
         print()
         print(f"Name: {civ.name}")
@@ -45,6 +73,13 @@ if __name__ == "__main__":
         print(f"History: {civ.history}")
         print()
         print(f"Interactions: {civ.neighbor_history}")
+        print()
+        print(f"Artifacts: {civ.artifacts}")
+        print()
+
+        # analyze artifacts
+        for artifact in civ.artifacts["Historical artifacts"]:
+            print(f"Artifact: {artifact}")
 
 
     # Print civilizations

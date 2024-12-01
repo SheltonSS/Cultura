@@ -31,7 +31,10 @@ artifact_types = [
     "Armor",
     "Tool", 
 
-    "Saying or Proverb",  
+    "Saying",
+    "Proverb",
+    "fable",
+    "legend",  
 
     "Jewelry",
     "Clothing or Garb",  
@@ -40,9 +43,14 @@ artifact_types = [
 
     "Religious Artifact", 
 
+    "Sculpture",
     "Visual Art",
-    "Written Work",
+    "performance Art",
 
+    "Poem",
+    "song",
+
+    "Mural",
     "Building",
     "Monument",
 
@@ -65,15 +73,4 @@ base_traits = {
     5: ["Adaptive", "Spiritual", "Tough"],      # Tundra
 }
 
-civ_names = {
-    0: "Shelleia",
-    1: "Borfia",
-    2: "Novilia",
-    3: "Matopia",
-    5: "Novilea",
-    6: "Mattia",
-    7: "Novia",
-    8: "Kaloria",
-    9: "Gothia",
-    10: "Galoria",
-}
+civ_names = ["shellenia", "borfia", "Gantz", "matopia", "Luzil", "mattia", "novia", "Okgot", "gothia", "galoria"]
