@@ -20,17 +20,38 @@ Tech_eras_string = blank
 
 json_format = """ 
     Name
+    Description
     purpose
-    Description 
-    Significance
 """
+# Museum_artifact_format = """
+#     Name
 
 artifact_types = [
-    "Weapon", "Tool", "Ceremonial Object", "Clothing", "Instrument", 
-    "Religious Artifact", "Artwork", "Writing", "Trade Good"
+    "Weapon", 
+    "Armor",
+    "Tool", 
+
+    "Saying or Proverb",  
+
+    "Jewelry",
+    "Clothing or Garb",  
+
+    "Musical Instrument",
+
+    "Religious Artifact", 
+
+    "Visual Art",
+    "Written Work",
+
+    "Building",
+    "Monument",
+
+    "Dance",
+
+    "Trade Good"
 ]
 
-terrain_map = [
+test_terrain = [
     [1, 1, 0, 3, 5],
     [1, 2, 2, 3, 5],
     [0, 1, 1, 2, 5],
@@ -42,4 +63,17 @@ base_traits = {
     2: ["Hardy", "Independent", "Resilient"],   # Hills
     3: ["Isolationist", "Strategic", "Defensive"],  # Mountains
     5: ["Adaptive", "Spiritual", "Tough"],      # Tundra
+}
+
+civ_names = {
+    0: "Shelleia",
+    1: "Borfia",
+    2: "Novilia",
+    3: "Matopia",
+    5: "Novilea",
+    6: "Mattia",
+    7: "Novia",
+    8: "Kaloria",
+    9: "Gothia",
+    10: "Galoria",
 }

@@ -1,32 +1,40 @@
 import misc
 import config
 from civilization import Civilization
+import map_generation
 import random
 import json
 
 if __name__ == "__main__":
     # Randomly assign civilization locations and traits
     # Civilizations 
-    location = (random.randint(0, len(config.terrain_map) - 1), random.randint(0, len(config.terrain_map[0]) - 1))
+    # This is a workshop to test the simulation
+    map = Civilization.map
+    Civilization.default_R = int(min(Civilization.map.width, Civilization.map.height) * 1)
+
+    location = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
     civ1 = Civilization(
-        name="Borf",
+        name="Shelleian",
         location=location,
-        terrain_type=config.terrain_map[location[0]][location[1]],
-        tech_level=random.randint(0, len(config.Tech_eras) - 1)
+        terrain_type=Civilization.map.get_terrain_map()[location[0]][location[1]],
+        # tech_level=random.randint(0, len(config.Tech_eras) - 1)
+        tech_level=0
     )
-    
-    location2 = location
+
+    location2 = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
     while location2 == location:
-        location2 = (random.randint(0, len(config.terrain_map) - 1), random.randint(0, len(config.terrain_map[0]) - 1))
+            location2 = (random.randint(0, len(Civilization.map.get_terrain_map()) - 1), random.randint(0, len(Civilization.map.get_terrain_map()[0]) - 1))
+
 
     civ2 = Civilization(
-        name="Shelley",
+        name="Novile",
         location=location2,
-        terrain_type=config.terrain_map[location2[0]][location2[1]],
-        tech_level=random.randint(0, len(config.Tech_eras) - 1)
+        terrain_type=Civilization.map.get_terrain_map()[location2[0]][location2[1]],
+        # tech_level=random.randint(0, len(config.Tech_eras) - 1)
+        tech_level=0
     )
 
-    Civilization.progress_and_interact_all_civilizations()
+    Civilization.progress_and_interact_all_civilizations(steps=2)    
 
     # Print civilizations
     # for i in range(10//len(Civilization.Civilizations)):
