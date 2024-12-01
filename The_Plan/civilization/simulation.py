@@ -63,25 +63,6 @@ if __name__ == "__main__":
 
     Civilization.progress_and_interact_all_civilizations(steps=1)    
 
-    # Print civilizations summation
-    # print("\n===============================\nCivilizations:")
-    # for civ in Civilization.Civilizations:
-    #     print()
-    #     print(f"Name: {civ.name}")
-    #     print(f"Description: {civ.cultural_context}")
-    #     print(f"Traits of {civ.name}: {civ.traits}")
-    #     print()
-    #     print(f"History: {civ.history}")
-    #     print()
-    #     print(f"Interactions: {civ.neighbor_history}")
-    #     print()
-    #     print(f"Artifacts: {civ.artifacts}")
-    #     print()
-
-    #     # analyze artifacts
-    #     for artifact in civ.artifacts["Historical artifacts"]:
-    #         print(f"Artifact: {artifact}")
-
 
     # Print civilizations
     # for i in range(10//len(Civilization.Civilizations)):
@@ -103,6 +84,7 @@ if __name__ == "__main__":
     # misc.save_generated_artifact(artifact)
 
     # analyze artifacts
-    analyzer = analysis.ArtifactAnalyzer()
+    analyzer = analysis.ArtifactAnalyzer(Civilization_Class=Civilization)
     artifacts = analyzer.load_artifacts()
     analyzer.analyze_artifacts(artifacts)
+    

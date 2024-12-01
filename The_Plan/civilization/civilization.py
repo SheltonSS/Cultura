@@ -16,6 +16,7 @@ if not openai.api_key:
 class Civilization:
     map = map_generation.TerrainMap()
     Civilizations = []
+    Civilizations_by_name = {}
     # Default_R = 5
     Default_R =int(min(map.width, map.height) * 1)
     Default_Turns = 10
@@ -58,6 +59,7 @@ class Civilization:
         # Civilization.Default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
         Civilization.year_progression = Civilization.calculate_year_progression()
         Civilization.Civilizations.append(self)
+        Civilization.Civilizations_by_name[self.name] = self
 
         # Find neighbors
         for civ in Civilization.Civilizations:
@@ -152,7 +154,9 @@ class Civilization:
 
             year_made_I = random.randint(Civilization.current_year, Civilization.current_year + Civilization.year_progression)
             artifact_data = json.loads(response['choices'][0]['message']['content'])
+            artifact_data["generation_type"] = generation_type
             artifact_data["Year Made"] = f"{abs(year_made_I)} {'BC' if year_made_I  < 0 else 'AD'}"
+            artifact_data["Civilization Name"] = self.name
             artifact_description = json.dumps(artifact_data, indent=2)
 
             if generation_type == "history":
@@ -299,11 +303,11 @@ class Civilization:
             for civilization in Civilization.Civilizations:
                 civilization.progress_age()
                 artifact = civilization.generate_cultural_artifacts()
-                print(f"Generated Historical Artifact: {artifact}")
+                # print(f"Generated Historical Artifact: {artifact}")
                 misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
                 artifact = civilization.generate_cultural_artifacts(generation_type = "neighbor")
-                print(f"Generated Interaction Artifact: {artifact}")
+                # print(f"Generated Interaction Artifact: {artifact}")
                 misc.save_generated_artifact(artifact)
 
             Civilization.current_year += Civilization.year_progression

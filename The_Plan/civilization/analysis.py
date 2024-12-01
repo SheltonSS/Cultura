@@ -6,11 +6,12 @@ import json
 import config
 
 class ArtifactAnalyzer:
-    def __init__(self, model_name='all-MiniLM-L6-v2', artifact_file='artifact.jsonl'):
+    def __init__(self, model_name='all-MiniLM-L6-v2', artifact_file='artifact.jsonl',Civilization_Class=None):
         """Initializes the ArtifactAnalyzer with a SentenceTransformer model."""
         self.model = SentenceTransformer(model_name)
         self.artifact_file = artifact_file
         self.existing_artifacts = self.load_artifacts()
+        self.Civilization_Class = Civilization_Class
 
     def calculate_narrative_integration(self, artifact_description, civ):
         """Calculates narrative integration between an artifact description and a civilization's narrative."""
@@ -25,10 +26,9 @@ class ArtifactAnalyzer:
         techlvl = [config.Tech_eras[civ.tech_level]]
         biome = [civ.terrain_type]
 
-        # Combine all keywords and match them with the artifact description
         keywords = traits + biome + techlvl
-        matched_keywords = [kw for kw in keywords if kw.lower() in artifact_description.lower()]
-        
+        matched_keywords = [str(kw).lower() for kw in keywords if str(kw).lower() in artifact_description.lower()]
+
         accuracy = len(matched_keywords) / len(keywords) if keywords else 0
         return accuracy, matched_keywords
 
@@ -72,10 +72,10 @@ class ArtifactAnalyzer:
         Returns a dictionary with individual scores and the final cumulative score.
         """
         # Calculate narrative integration
-        narrative_integration = self.calculate_narrative_integration(artifact['Description'], artifact['Civilization'])
+        narrative_integration = self.calculate_narrative_integration(artifact['Description'], self.Civilization_Class.Civilizations_by_name[artifact['Civilization Name']])
         
         # Calculate cultural accuracy
-        cultural_accuracy, matched_keywords = self.calculate_cultural_accuracy(artifact['Description'], artifact['Civilization'])
+        cultural_accuracy, matched_keywords = self.calculate_cultural_accuracy(artifact['Description'], self.Civilization_Class.Civilizations_by_name[artifact['Civilization Name']])
         
         # Calculate novelty
         novelty_score, similarities = self.calculate_novelty(artifact['Description'])
