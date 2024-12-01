@@ -6,17 +6,23 @@ import json
 import config
 
 class ArtifactAnalyzer:
-    def __init__(self, model_name='all-MiniLM-L6-v2', artifact_file='artifact.jsonl',Civilization_Class=None):
+    def __init__(self, model_name='all-MiniLM-L6-v2', artifact_file='artifact.jsonl', Civilization_Class=None):
         """Initializes the ArtifactAnalyzer with a SentenceTransformer model."""
         self.model = SentenceTransformer(model_name)
         self.artifact_file = artifact_file
-        self.existing_artifacts = self.load_artifacts()
         self.Civilization_Class = Civilization_Class
+        self.existing_artifacts = self.load_artifacts()
 
     def calculate_narrative_integration(self, artifact_description, civ):
-        """Calculates narrative integration between an artifact description and a civilization's narrative."""
+        """Calculates narrative integration between an artifact description and a civilization's history. Does the artifact fit well with the history of the civilization?."""
         artifact_embedding = self.model.encode(artifact_description)
-        narrative_embedding = self.model.encode(civ.cultural_context)
+
+        artifact_data = json.loads(artifact_description)
+
+        if artifact_data["generation_type"] == "neighbor":
+            narrative_embedding = self.model.encode(civ.neighbor_history)
+        else:
+            narrative_embedding = self.model.encode(civ.history)
         similarity = cosine_similarity([artifact_embedding], [narrative_embedding])[0][0]
         return similarity
 
@@ -43,6 +49,12 @@ class ArtifactAnalyzer:
         except FileNotFoundError:
             print(f"Error: File {self.artifact_file} not found.")
         return artifacts
+
+    def save_artifacts(self):
+        """Save the updated artifacts back to the JSONL file."""
+        with open(self.artifact_file, 'w') as file:
+            for artifact in self.existing_artifacts:
+                file.write(json.dumps(artifact) + '\n')
 
     def calculate_novelty(self, artifact_description):
         """
@@ -100,22 +112,43 @@ class ArtifactAnalyzer:
         }
 
     def analyze_artifact(self, artifact):
+        """Analyze a single artifact, and save the result to the artifact object if not already analyzed."""
+        # Check if the artifact has already been analyzed
+        if 'cumulative_score' in artifact:
+            print(f"Skipping artifact '{artifact['Name']}' as it is already analyzed.")
+            return artifact  # Skip this artifact if it already has a cumulative score
+
+        # Calculate the cumulative score and add it to the artifact object
         cumulative_score = self.cumulative_analysis_score(artifact)
-        print(f"narrative_integration: {cumulative_score['narrative_integration']}")
-        print(f"cultural_accuracy: {cumulative_score['cultural_accuracy']}")
-        print(f"novelty_score: {cumulative_score['novelty_score']}")
-        print(f"cumulative_score: {cumulative_score['cumulative_score']}")
-        # print(f"matched_keywords: {cumulative_score['matched_keywords']}")
+        artifact['cumulative_score'] = cumulative_score
+        artifact['narrative_integration'] = cumulative_score['narrative_integration']
+        artifact['cultural_accuracy'] = cumulative_score['cultural_accuracy']
+        artifact['novelty_score'] = cumulative_score['novelty_score']
+        artifact['matched_keywords'] = cumulative_score['matched_keywords']
 
-        return cumulative_score
+        for key in artifact['cumulative_score'].keys():
+            print(f"{key}: {artifact['cumulative_score'][key]}")
+        print()
 
-    
+        # Save the updated artifact list back to the JSONL file
+        self.save_artifacts()
+
+        return artifact
+
     def analyze_artifacts(self, artifacts):
-        average_score = 0
+        """Analyze multiple artifacts and return the average cumulative score."""
+        total_score = 0
+        analyzed_artifacts = 0
+
         # Analyze each artifact
         for artifact in artifacts:
-            average_score += self.analyze_artifact(artifact)['cumulative_score']
-        return average_score / len(artifacts)
+            result = self.analyze_artifact(artifact)
+            total_score += result['cumulative_score']['cumulative_score']
+            analyzed_artifacts += 1
+
+        average_score = total_score / analyzed_artifacts if analyzed_artifacts else 0
+        return average_score
+
 
 
 # Example usage
