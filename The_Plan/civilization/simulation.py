@@ -3,6 +3,7 @@ import config
 from civilization import Civilization
 import map_generation
 import random
+import analysis
 import json
 
 if __name__ == "__main__":
@@ -60,26 +61,26 @@ if __name__ == "__main__":
     print(f"Civilization 1: {civ1.name} , {civ1.location}")
     print(f"Civilization 2: {civ2.name} , {civ2.location}")
 
-    Civilization.progress_and_interact_all_civilizations(steps=10)    
+    Civilization.progress_and_interact_all_civilizations(steps=1)    
 
     # Print civilizations summation
-    print("\n===============================\nCivilizations:")
-    for civ in Civilization.Civilizations:
-        print()
-        print(f"Name: {civ.name}")
-        print(f"Description: {civ.cultural_context}")
-        print(f"Traits of {civ.name}: {civ.traits}")
-        print()
-        print(f"History: {civ.history}")
-        print()
-        print(f"Interactions: {civ.neighbor_history}")
-        print()
-        print(f"Artifacts: {civ.artifacts}")
-        print()
+    # print("\n===============================\nCivilizations:")
+    # for civ in Civilization.Civilizations:
+    #     print()
+    #     print(f"Name: {civ.name}")
+    #     print(f"Description: {civ.cultural_context}")
+    #     print(f"Traits of {civ.name}: {civ.traits}")
+    #     print()
+    #     print(f"History: {civ.history}")
+    #     print()
+    #     print(f"Interactions: {civ.neighbor_history}")
+    #     print()
+    #     print(f"Artifacts: {civ.artifacts}")
+    #     print()
 
-        # analyze artifacts
-        for artifact in civ.artifacts["Historical artifacts"]:
-            print(f"Artifact: {artifact}")
+    #     # analyze artifacts
+    #     for artifact in civ.artifacts["Historical artifacts"]:
+    #         print(f"Artifact: {artifact}")
 
 
     # Print civilizations
@@ -100,3 +101,8 @@ if __name__ == "__main__":
     # artifact = civ1.generate_cultural_artifacts(generation_type=2)
     # print(f"\n: {artifact}")
     # misc.save_generated_artifact(artifact)
+
+    # analyze artifacts
+    analyzer = analysis.ArtifactAnalyzer()
+    artifacts = analyzer.load_artifacts()
+    analyzer.analyze_artifacts(artifacts)
