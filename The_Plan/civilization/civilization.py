@@ -17,12 +17,16 @@ class Civilization:
     Default_R = 5
     Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
-    progress_point_limit = 10
-    current_year = -4000  # 4000 BC. Negative represents BC.
+    progress_point_limit = 5
+    current_year = -4000
     year_progression = 50
     # print("class map generation")
     map = map_generation.TerrainMap()
 
+    @staticmethod
+    def get_string_year():
+        """Return the current year in human-readable format."""
+        return f"{abs(Civilization.current_year)} {'BC' if Civilization.current_year < 0 else 'AD'}"
 
     def __init__(self, name, location, terrain_type, tech_level):
         """
@@ -43,13 +47,15 @@ class Civilization:
         self.artifacts = {"Cultural Artifacts": []}
         self.history = []
         self.history.append(f"Founded { self.name } in a { self.get_terrain_description() } region during the { config.Tech_eras[self.tech_level] } era.")
-        # self.progress_point_limit = 10
         self.neighbors = []
         self.neighbor_history = []
-        Civilization.default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
-        Civilization.calculate_year_progression()
 
+        # Update civilization-wide properties
+        Civilization.Default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
+        Civilization.year_progression = Civilization.calculate_year_progression()
         Civilization.Civilizations.append(self)
+
+        # Find neighbors
         for civ in Civilization.Civilizations:
             civ.find_neighbors(Civilization.Default_R)
 
@@ -100,26 +106,19 @@ class Civilization:
         }
         return descriptions.get(self.terrain_type, "unknown terrain")
 
-        
-    def generate_cultural_artifacts(self, model="gpt-4", max_tokens=350, temperature=0.7, generation_type=0):
-        """
-        Generates a unique cultural artifact description using ChatGPT.
-        """
-        global current_year
-
-        # Construct prompt | regular generation mode
+    def generate_cultural_artifacts(self, model="gpt-3.5-turbo", max_tokens=350, temperature=0.7, generation_type=1):
+        """Generate a unique cultural artifact description using ChatGPT."""
+        # regular generation mode
         prompt = f""" 
         Describe a unique cultural artifact of type '{random.choice(config.artifact_types)}' made during the {config.Tech_eras[self.tech_level]} era, including its purpose and significance, using the following cultural context:
 
         Civilization Name: {self.name}
-        Region: {self.terrain_type}
+        Region: {self.get_terrain_description()}
         Traits: {', '.join(self.traits)}
-
-        The civilization is known for those qualities, which should influence the cultural artifact generated. Consider how these traits, the environment, and the technology level might impact the design, purpose, and significance of the artifact.
 
         Here are the general definitions for the technological eras:
 
-            {config.Tech_eras_string}
+        {config.Tech_eras_string}
 
         The response should be in the following JSON format:
 
@@ -127,24 +126,17 @@ class Civilization:
 
         Be sure to integrate aspects of the civilization into the artifact, selecting aspects of their values, environment, and technological level to shape the artifact's form and function.
 
-        Current Year: {abs(self.current_year)} {'BC' if self.current_year < 0 else 'AD'}
+        Current Time Period: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)}{'BC' if Civilization.current_year + Civilization.year_progression < 0 else 'AD'}
         """
 
         if generation_type == 1:  # history generation mode
-            prompt += f"""
-            The response should also take into consideration the following history of the civilization:
-
-            {', '.join(self.history)}
-            """
+            prompt += f"The response should also consider the civilization's history: {', '.join(self.history)}"
         if generation_type == 2:  # neighbor generation mode
-            prompt += f"""
-                - Neighboring Civilizations: {[neighbor.cultural_context for neighbor in self.neighbors]}
-
-                - Neighboring Civilizations' Interaction History: {', '.join(self.neighbor_history)}
-            """
+            prompt += f"Neighboring Civilizations: {[neighbor.cultural_context for neighbor in self.neighbors]}"
+            
+            prompt += f"Neighboring Civilizations Interaction History: {', '.join(self.neighbor_history)}"
 
         try:
-            # Query the model
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
@@ -154,7 +146,8 @@ class Civilization:
 
             artifact_description = response['choices'][0]['message']['content']
             # print("\ndescription", artifact_description)
-            year_made = f'"Year Made": "{abs(self.current_year)} {"BC" if self.current_year < 0 else "AD"}"'
+            year_made_I = random.randint(Civilization.current_year, Civilization.current_year + Civilization.year_progression)
+            year_made = f'"Year Made": "{abs(year_made_I)} {"BC" if year_made_I < 0 else "AD"}"'
             year_made+= "}"
             # print(f"\n{artifact_description[:artifact_description.find('}')]},\n{year_made}")
             artifact_description = f"{artifact_description[:artifact_description.find('}')]},\n{year_made}"
@@ -166,14 +159,9 @@ class Civilization:
             return f"Error generating artifact: {error}"
         
     def progress_era(self):
-        """
-        Progress the civilization to the next technological era. This increases tech level,
-        may add or remove traits, and updates the cultural context.
-        """
-        # Increase tech level
-        if self.tech_level < len(config.Tech_eras):
+        """Progress the civilization to the next technological era."""
+        if self.tech_level < Civilization.max_tech_level - 1:
             self.tech_level += 1
-            print(f"{self.name} has progressed to the {config.Tech_eras[self.tech_level]} era.")
             self.history.append(f"{self.name} has progressed to the {config.Tech_eras[self.tech_level]} era.")
 
         # Add or remove traits
@@ -194,11 +182,7 @@ class Civilization:
         self.cultural_context = self.generate_cultural_context()
 
     def regress_era(self):
-        """
-        Regress the civilization to a previous technological era. This decreases the tech level
-        and may remove traits, reflecting a decline in progress.
-        """
-        # Decrease tech level
+        """Regress the civilization to the previous technological era."""
         if self.tech_level > 1:
             self.tech_level -= 1
             # print(f"{self.name} has regressed back to the {config.Tech_eras[self.tech_level]} era.")
@@ -215,65 +199,50 @@ class Civilization:
         self.cultural_context = self.generate_cultural_context()
 
     def progress_age(self):
-        """
-        Progress the civilization through an age. This increments the progress points, adds to the history,
-        and decides whether to progress or regress the civilization based on the balance of positive and negative events.
-
-        :return: None
-        """
-        global current_year
+        """Progress the civilization through an age."""
+        # Civilization.current_year += Civilization.year_progression
         progress_points = 0
         positive_outcomes = 0
         negative_outcomes = 0
 
-        self.history.append(f"{abs(self.current_year)}{'BC' if self.current_year < 0 else 'AD'} - {abs(self.current_year + self.year_progression)}{'BC' if self.current_year + self.year_progression < 0 else 'AD'}: ")
-
-        while self.tech_level < len(config.Tech_eras) and progress_points < Civilization.progress_point_limit:
+        while progress_points < Civilization.progress_point_limit:
             event = event_picker.select_event()
-            
+            progress_points += 1
             if event["Outcome"] == "Positive":
                 positive_outcomes += 1
             else:
                 negative_outcomes += 1
-            
-            progress_points += 1
             self.history.append(f"{event['Outcome']} {event['EventType']}: {event['Event']}")
 
         if positive_outcomes > negative_outcomes:
             self.progress_era()
-        elif positive_outcomes < negative_outcomes:
+        elif negative_outcomes > positive_outcomes:
             self.regress_era()
 
-        # Update year based on average tech level
-        year_progression = Civilization.calculate_year_progression()
-        self.current_year += year_progression
-
-        print(f"\n ================================\n History for {self.name}: {abs(self.current_year)} {'BC' if self.current_year < 0 else 'AD'} \n================================\n")
+        print(f"\n ================================\n History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
         for history_entry in self.history:
             print(history_entry)
 
-    def interact_with_neighbors(self):
-        """
-        Interact with neighbors, adding or removing traits based on the interaction type.
+        Civilization.year_progression = Civilization.calculate_year_progression()
 
-        :return: None
-        """
+    def interact_with_neighbors(self):
+        """Interact with neighbors, adding or removing traits based on the interaction type."""
         neighbor_interaction_limit = 5
-        cultural_crossing_limit = neighbor_interaction_limit // 2  # Fixed typo
+        cultural_crossing_limit = neighbor_interaction_limit // 2
 
         positive_interactions = 0
         negative_interactions = 0
-        criss_cross = ""  # Initialize this outside the loop to avoid it being undefined.
+        criss_cross = ""
 
         for _ in range(neighbor_interaction_limit):
-            event = event_picker.select_neighbor_event()  # Fetch a random event
+            event = event_picker.select_neighbor_event()
 
             for neighbor in self.neighbors:
                 if event["Outcome"] == "Positive":
                     positive_interactions += 1
                     # Check if positive interactions exceed the threshold for cultural exchange
                     if positive_interactions > cultural_crossing_limit:
-                        # Cross-cultural exchange occurs here
+                        # Cross-cultural exchange
                         self_trait = random.choice(self.traits) 
                         neighbor_trait = random.choice(neighbor.traits)
 
@@ -300,33 +269,28 @@ class Civilization:
         for history_entry in self.neighbor_history:
             print(history_entry)
 
+
+    @staticmethod
+    def calculate_year_progression():
+        """Calculate year progression based on the average tech level."""
+        if not Civilization.Civilizations:
+            return 100
+        avg_tech_level = sum(civ.tech_level for civ in Civilization.Civilizations) / len(Civilization.Civilizations)
+        return max(1, int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5)))
+
+    @staticmethod
     def progress_and_interact_all_civilizations(steps=5):
-        "Running the simulation for all civilizations..."
+        """Run the simulation for all civilizations for a number of steps."""
         for step in range(steps):
             for civilization in Civilization.Civilizations:
                 civilization.progress_age()
-                artifcat = civilization.generate_cultural_artifacts()
-                print(f"\n: {artifcat} :")
-                misc.save_generated_artifact(artifcat) 
+                artifact = civilization.generate_cultural_artifacts()
+                print(f"Generated Historical Artifact: {artifact}")
+                misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
-                artifcat = civilization.generate_cultural_artifacts(generation_type=2)
-                print(f"\n: {artifcat} :")
-                misc.save_generated_artifact(artifcat) 
+                artifact = civilization.generate_cultural_artifacts(generation_type=2)
+                print(f"Generated Interaction Artifact: {artifact}")
+                misc.save_generated_artifact(artifact)
 
-    def calculate_year_progression():
-        """
-        Calculate how many years pass based on the average tech level of all civilizations.
-        Lower tech levels result in faster year progression, higher tech levels slow it down.
-        """
-        if not Civilization.Civilizations:
-            return 50  # default time progression if no civilizations exist
-        
-        # compute average tech level
-        total_tech_level = sum(civ.tech_level for civ in Civilization.Civilizations)
-        avg_tech_level = total_tech_level / len(Civilization.Civilizations)
-        
-        # Determine time progression factor
-        # Higher tech levels slow the progression (fewer years pass)
-        # Lower tech levels accelerate it (more years pass)
-        time_step = int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5))
-        return max(1, time_step)  # Ensure at least 1 year passes
+            Civilization.current_year += Civilization.year_progression
+            Civilization.year_progression = Civilization.calculate_year_progression()

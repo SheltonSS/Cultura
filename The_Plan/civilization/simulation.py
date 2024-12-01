@@ -34,7 +34,18 @@ if __name__ == "__main__":
         tech_level=0
     )
 
-    Civilization.progress_and_interact_all_civilizations(steps=2)    
+    Civilization.progress_and_interact_all_civilizations(steps=10)    
+
+    for civ in Civilization.Civilizations:
+        print()
+        print(f"Name: {civ.name}")
+        print(f"Description: {civ.cultural_context}")
+        print(f"Traits of {civ.name}: {civ.traits}")
+        print()
+        print(f"History: {civ.history}")
+        print()
+        print(f"Interactions: {civ.neighbor_history}")
+
 
     # Print civilizations
     # for i in range(10//len(Civilization.Civilizations)):
