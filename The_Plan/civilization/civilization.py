@@ -287,7 +287,6 @@ class Civilization:
         for history_entry in self.neighbor_history:
             print(history_entry)
 
-
     @staticmethod
     def calculate_year_progression():
         """Calculate year progression based on the average tech level."""
@@ -304,6 +303,7 @@ class Civilization:
                 civilization.progress_age()
                 artifact = civilization.generate_cultural_artifacts()
                 # print(f"Generated Historical Artifact: {artifact}")
+            
                 misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
                 artifact = civilization.generate_cultural_artifacts(generation_type = "neighbor")

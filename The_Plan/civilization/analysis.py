@@ -13,18 +13,50 @@ class ArtifactAnalyzer:
         self.Civilization_Class = Civilization_Class
         self.existing_artifacts = self.load_artifacts()
 
-    def calculate_narrative_integration(self, artifact_description, civ):
-        """Calculates narrative integration between an artifact description and a civilization's history. Does the artifact fit well with the history of the civilization?."""
-        artifact_embedding = self.model.encode(artifact_description)
+    def calculate_narrative_integration(self, artifact, civ):
+        """
+        Calculates narrative integration between an artifact description and a civilization's history or neighbor history."""
+        # Extract artifact description
+        artifact_description = artifact.get('Description', '').strip()
+        if not artifact_description:
+            print("Artifact description is missing or empty.")
+            return 0.0
 
-        artifact_data = json.loads(artifact_description)
+        # Attempt to encode the artifact description
+        try:
+            artifact_embedding = self.model.encode(artifact_description)
+        except Exception as e:
+            print(f"Error encoding artifact description: {e}")
+            return 0.0
 
-        if artifact_data["generation_type"] == "neighbor":
-            narrative_embedding = self.model.encode(civ.neighbor_history)
-        else:
-            narrative_embedding = self.model.encode(civ.history)
-        similarity = cosine_similarity([artifact_embedding], [narrative_embedding])[0][0]
+        # Determine the appropriate history (regular or neighbor)
+        history = civ.neighbor_history if artifact.get("generation_type") == "neighbor" else civ.history
+        if not history or not isinstance(history, list):
+            print("Civilization history is missing, empty, or invalid.")
+            return 0.0
+
+        # Combine the history into a single narrative string
+        narrative = " ".join(history).strip()
+        if not narrative:
+            print("Civilization history is empty after combining.")
+            return 0.0
+
+        # Attempt to encode the civilization narrative
+        try:
+            narrative_embedding = self.model.encode(narrative)
+        except Exception as e:
+            print(f"Error encoding civilization history: {e}")
+            return 0.0
+
+        # Calculate cosine similarity
+        try:
+            similarity = cosine_similarity([artifact_embedding], [narrative_embedding])[0][0]
+        except Exception as e:
+            print(f"Error calculating similarity: {e}")
+            return 0.0
+
         return similarity
+
 
     def calculate_cultural_accuracy(self, artifact_description, civ):
         """Calculates cultural accuracy based on the alignment of an artifact description with the cultural profile."""
@@ -84,7 +116,7 @@ class ArtifactAnalyzer:
         Returns a dictionary with individual scores and the final cumulative score.
         """
         # Calculate narrative integration
-        narrative_integration = self.calculate_narrative_integration(artifact['Description'], self.Civilization_Class.Civilizations_by_name[artifact['Civilization Name']])
+        narrative_integration = self.calculate_narrative_integration(artifact, self.Civilization_Class.Civilizations_by_name[artifact['Civilization Name']])
         
         # Calculate cultural accuracy
         cultural_accuracy, matched_keywords = self.calculate_cultural_accuracy(artifact['Description'], self.Civilization_Class.Civilizations_by_name[artifact['Civilization Name']])
