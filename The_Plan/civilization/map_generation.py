@@ -1,9 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from noise import pnoise2
+import pygame
 import random
+from noise import pnoise2
 from scipy.ndimage import gaussian_filter
-from matplotlib.colors import ListedColormap
+import config
+# from civilization import Civilization
 
 class TerrainMap:
     def __init__(self, width=25, height=25, base_scale=40.0, octaves=6, persistence=0.5, lacunarity=2.0, seed=None):
@@ -13,15 +14,15 @@ class TerrainMap:
         self.octaves = octaves
         self.persistence = persistence
         self.lacunarity = lacunarity
-        # self.seed = seed or random.randint(1, 250)
-        self.seed =21
+        self.seed = seed or random.randint(1, 250)
+        # self.seed =21
         self.height_map = None
         self.normalized_map = None
         self.terrain_map = None
         self.forest_map = None
-
         self.create_terrain_map()
-    
+        self.civ_map = [[None for _ in range(height)] for _ in range(width)]
+
     def generate_height_map(self):
         """Generate a Perlin noise-based height map."""
         x_indices = np.arange(self.height) / self.base_scale
@@ -105,29 +106,47 @@ class TerrainMap:
         self.generate_forests(forest_probability)
 
     def visualize(self):
-        """Visualize the terrain map."""
-        cmap = ListedColormap([
-            (0.2, 0.4, 0.8),  # Water - blue
-            (0.5, 0.8, 0.4),  # Plains - green
-            (0.6, 0.5, 0.2),  # Hills - brown
-            (0.5, 0.5, 0.5),  # Mountains - gray
-            (0.2, 0.6, 0.3),  # Forests - dark green
-        ])
+        """Visualize the terrain map using Pygame."""
+        pygame.init()
 
-        # Combine the terrain and forest maps
-        combined_map = np.copy(self.terrain_map)
-        combined_map[self.forest_map == 4] = 4  # Forests take precedence over other terrain types
+        # Define colors for different terrain types
+        terrain_colors = {
+            0: (0, 0, 255),   # Water (Blue)
+            1: (0, 255, 0),   # Plains (Green)
+            2: (139, 69, 19), # Hills (Brown)
+            3: (128, 128, 128), # Mountains (Gray)
+            4: (34, 139, 34)  # Forest (Dark Green)
+        }
 
-        plt.figure(figsize=(10, 10))
-        plt.imshow(combined_map, cmap=cmap, interpolation='bicubic')
-        plt.colorbar(label='Terrain Features')
-        plt.title(f'Procedurally Generated 2D World Map (Seed: {self.seed})')
-        plt.show()
+        # Set up the Pygame screen
+        screen = pygame.display.set_mode((self.width * 10, self.height * 10))
+        pygame.display.set_caption("Terrain Map")
+
+        # Draw the terrain map
+        for i in range(self.height):
+            for j in range(self.width):
+                terrain_type = self.terrain_map[i, j]
+                if self.forest_map[i, j] == 4:
+                    terrain_type = 4  # Forests override terrain
+
+                color = terrain_colors[terrain_type]
+                pygame.draw.rect(screen, color, (j * 10, i * 10, 10, 10))  # Draw the terrain square
+
+        # Update the screen
+        pygame.display.flip()
+
+        # Run the Pygame event loop
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+        pygame.quit()
 
     def get_terrain_map(self):
-        # for row in self.terrain_map:
-        #     print(row)
         return self.terrain_map
+
     def create_terrain_map(self):
         self.generate(smooth_sigma=3, forest_probability=0.05)
         self.get_terrain_map()
@@ -135,8 +154,22 @@ class TerrainMap:
 
 # Example usage
 # if __name__ == "__main__":
+
+#     # Example initialization of the map and civilizations
+#     map_instance = TerrainMap()
+
+#     # Place a civilization at (5, 5)
+#     civ1 = Civilization(name="Civ1", location=(5, 5))
+#     Civilization.place_civilization(civ1, 5, 5)
+
+#     # Place another civilization at (10, 10)
+#     civ2 = Civilization(name="Civ2", location=(10, 10))
+#     Civilization.place_civilization(civ2, 10, 10)
+
+
 #     terrain = TerrainMap()
 #     terrain.visualize()
-#     terrain.generate(smooth_sigma=3, forest_probability=0.05)  # Adjust forest probability to control density
+#     terrain.generate(smooth_sigma=3, forest_probability=0.05)
 #     terrain.get_terrain_map()
 #     terrain.visualize()
+

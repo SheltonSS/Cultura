@@ -17,46 +17,119 @@ class Civilization:
     map = map_generation.TerrainMap()
     Civilizations = []
     Civilizations_by_name = {}
-    # Default_R = 5
-    Default_R =int(min(map.width, map.height) * 1)
+    Default_R = int(min(map.width, map.height) * 1)  # Default range
     Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
     progress_point_limit = 5
     current_year = -4000
     year_progression = 50
-    # print("class map generation")
     existing_artifacts = []
 
     @staticmethod
     def get_string_year():
         """Return the current year in human-readable format."""
         return f"{abs(Civilization.current_year)} {'BC' if Civilization.current_year < 0 else 'AD'}"
+    
+    @staticmethod
+    def get_unused_civ_name():
+        """
+        Selects a random unused civilization name from config.civ_names.
+        Ensures the name has not been used by another civilization.
+        """
+        unused_names = list(set(config.civ_names) - set(Civilization.Civilizations_by_name.keys()))
+        if unused_names:
+            return random.choice(unused_names)
+        else:
+            raise ValueError("No unused civilization names available.") 
 
-    def __init__(self, name, location, tech_level = 0):
+    @staticmethod
+    def place_civilization(civ, x=None, y=None):
+        """
+        Places a civilization on the map at the given coordinates (x, y).
+        If no coordinates are provided, it will place the civilization at a random unoccupied spot.
+        Ensures that the spot is available (i.e., not occupied by another civilization).
+        """
+        print(f"Placing {civ.name}")
+        if x is None or y is None:
+            # Try to get a random unoccupied location
+            location = Civilization.get_random_unoccupied_location()
+            if location is None:
+                print(f"Could not find a valid location for {civ.name}.")
+                return None  # or raise an exception, or retry based on your use case
+            x, y = location
+        print(f"Attempting to place {civ.name} at x: {x}, y: {y}")
+
+        # Check if the spot is available by ensuring no other civilization is placed at this spot
+        if not any(civ.location == (x, y) for civ in Civilization.Civilizations): 
+            civ.location = (x, y)  # Set civilization's location
+            Civilization.map.civ_map[x][y] = civ  # Assign the civilization to this terrain spot
+            print(f"{civ.name} has been placed at ({x}, {y})")
+        else:
+            print(f"Unable to place {civ.name} at ({x}, {y}), spot is already occupied.")
+            return Civilization.place_civilization(civ)  # Retry placement if occupied
+
+        return (x, y)
+
+    @staticmethod
+    def get_random_unoccupied_location():
+        """Finds and returns a random unoccupied location on the map."""
+        terrain_map = Civilization.map.get_terrain_map()  # Correct way to access the terrain map
+        width = len(terrain_map)
+        height = len(terrain_map[0]) if width > 0 else 0
+        print(f"width: {width}, height: {height}")
+        
+        max_attempts = 100  # Safeguard to prevent infinite loop
+        attempts = 0
+        
+        while attempts < max_attempts:
+            # Randomly select coordinates
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            print(f"Trying x: {x}, y: {y} as an unoccupied location")
+            
+            # Check if the spot is available (no civilization should occupy this spot)
+            if not any(civ.location == (x, y) for civ in Civilization.Civilizations):
+                print(f"Found unoccupied location at x: {x}, y: {y}")
+                return x, y
+            
+            attempts += 1
+        
+        # If we reach here, no unoccupied spot was found
+        print("Max attempts reached without finding an unoccupied location.")
+        return None  # Or you could raise an exception here if desired
+
+    def __init__(self, name=None, location=None, tech_level=0):
         """
         Initialize a civilization with traits and a location.
         
         Parameters:
         - name: Name of the civilization
         - location: (x, y) tuple on the map
-        - terrain_type: The terrain type from the map (water, plains, etc.)
         - tech_level: Technological advancement level (1-9)
         """
-        self.name = name
-        self.location = location
-        # self.terrain_type = terrain_type
-        self.terrain_type = Civilization.map.get_terrain_map()[location[0]][location[1]] 
+        # Assign name if not provided
+        self.name = name or Civilization.get_unused_civ_name()
+        print(f"New civilization: {self.name}")
+
+        # Assign location if not provided
+        self.location = location or Civilization.place_civilization(self)
+        print(f"{self.name} has been placed at {self.location}")
+
+        # Set terrain type based on the location
+        self.terrain_type = Civilization.map.get_terrain_map()[self.location[0]][self.location[1]]
+
+        # Set tech level and traits
         self.tech_level = tech_level
         self.traits = self.assign_traits()
+
+        # Generate cultural context and history
         self.cultural_context = self.generate_cultural_context()
         self.artifacts = {"Historical artifacts": [], "Interaction artifacts": []}
-        self.history = []
-        self.history.append(f"Founded { self.name } in a { self.get_terrain_description() } region during the { config.Tech_eras[self.tech_level] } era.")
+        self.history = [f"Founded {self.name} in a {self.get_terrain_description()} region during the {config.Tech_eras[self.tech_level]} era."]
         self.neighbors = []
         self.neighbor_history = []
 
         # Update civilization-wide properties
-        # Civilization.Default_R = int(min(Civilization.map.width, Civilization.map.height) * 0.1)
         Civilization.year_progression = Civilization.calculate_year_progression()
         Civilization.Civilizations.append(self)
         Civilization.Civilizations_by_name[self.name] = self
@@ -70,17 +143,24 @@ class Civilization:
         random_trait = random.choice(["Innovative", "Tradition-Oriented", "Expansive", "Artistic"])
         return config.base_traits.get(self.terrain_type, ["Undefined"]) + [random_trait]
     
-    def find_neighbors(self):
-        """
-        Find and add civilizations within a given radius to the neighbors list.
 
-        Parameters:
-        - radius (float): The distance within which other civilizations are considered neighbors.
-        """
+    def expand_territory(self):
+        """Expand the civilization's territory to nearby tiles."""
+        x, y = self.location
+        expansion_radius = 2
+        for dx in range(-expansion_radius, expansion_radius + 1):
+            for dy in range(-expansion_radius, expansion_radius + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < Civilization.map.width and 0 <= ny < Civilization.map.height:
+                    if Civilization.map.get_terrain_map()[nx][ny] is None:
+                        Civilization.map.get_terrain_map()[nx][ny] = self
+                        print(f"{self.name} has expanded to ({nx}, {ny})")
+
+    def find_neighbors(self):
+        """Find and add civilizations within a given radius to the neighbors list."""
         self.neighbors = []
         for civ in Civilization.Civilizations:
             if civ != self:
-                # TO FIX
                 # distance = misc.calculate_distance(self.location, civ.location)
                 # if distance <= Civilization.Default_R:
                 self.neighbors.append(civ)

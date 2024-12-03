@@ -1,3 +1,5 @@
+from matplotlib.colors import ListedColormap
+
 Tech_eras_string ="""
 Ancient
 Classical
@@ -73,4 +75,12 @@ base_traits = {
     5: ["Adaptive", "Spiritual", "Tough"],      # Tundra
 }
 
-civ_names = ["shellenia", "borfia", "Gantz", "matopia", "Luzil", "mattia", "novia", "Okgot", "gothia", "galoria"]
+cmap = ListedColormap([
+    (0.2, 0.4, 0.8),  # Water - blue
+    (0.5, 0.8, 0.4),  # Plains - green
+    (0.6, 0.5, 0.2),  # Hills - brown
+    (0.5, 0.5, 0.5),  # Mountains - gray
+    (0.2, 0.6, 0.3),  # Forests - dark green
+])
+
+civ_names = ["Shellenia", "Borfia", "Gantz", "Matopia", "Luzil", "Mattia", "Novia", "Okgot", "Gothia", "Galoria"]
