@@ -31,5 +31,5 @@ if __name__ == "__main__":
     print("analyzing artifacts...")
     analyzer = analysis.ArtifactAnalyzer(Civilization_Class=Civilization)
     # artifacts = analyzer.load_artifacts()
-    print("\Average cumulative score of all civilization's generated artifacts:", analyzer.analyze_artifacts())
+    print("Average cumulative score of all civilization's generated artifacts:", analyzer.analyze_artifacts())
     

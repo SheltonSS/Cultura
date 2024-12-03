@@ -83,4 +83,4 @@ cmap = ListedColormap([
     (0.2, 0.6, 0.3),  # Forests - dark green
 ])
 
-civ_names = ["Shellenia", "Borfia", "Gantz", "Matopia", "Luzil", "Mattia", "Novia", "Okgot", "Gothia", "Galoria"]
+civ_names = ["Shellenia", "Borfia", "Gantz", "Matopia", "Luzil", "Mattia", "Novia", "Okgot", "Gothia", "Galoria","shapinharo"]

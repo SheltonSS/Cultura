@@ -138,7 +138,7 @@ class ArtifactAnalyzer:
         }
 
     def analyze_artifact(self, artifact):
-        """Analyze a single artifact and update it with scores."""
+        """Analyze a single artifact."""
         if 'cumulative_score' in artifact:
             return artifact
 
@@ -172,9 +172,8 @@ class ArtifactAnalyzer:
                             return obj.tolist()
                         return obj
 
-                    # Ensure the artifact is serializable before writing
                     serializable_artifact = json.dumps(artifact, default=convert_to_serializable)
-                    file.write(serializable_artifact + '\n')  # Write each artifact as a separate line
+                    file.write(serializable_artifact + '\n')
 
         except Exception as e:
             print(f"Error saving artifacts: {e}")
@@ -182,4 +181,5 @@ class ArtifactAnalyzer:
 
         # Calculate the average cumulative score from the analyzed artifacts
         average_score = np.mean([artifact['cumulative_score'] for artifact in analyzed_artifacts])
+        self.clear_artifact_file()
         return average_score

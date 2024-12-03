@@ -35,3 +35,13 @@ def save_generated_artifact(generated_text, filename="artifact.jsonl"):
         print(f"Failed to decode JSON: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+def convert_to_serializable(obj):
+            """Convert non-serializable objects to JSON-compatible types."""
+            if isinstance(obj, (np.float32, np.float64, float)):
+                return float(obj)
+            elif isinstance(obj, (np.int32, np.int64, int)):
+                return int(obj)
+            elif isinstance(obj, (np.ndarray, list)):
+                return obj.tolist()
+            return obj
