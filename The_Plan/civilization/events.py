@@ -9,10 +9,10 @@ Events = {
             "Craftsmanship Improvement",
             "Transportation Advancement",
             "Efficient Resource Utilization",
-            "Water Purification Breakthrough",
+            "Water Technology Breakthrough",
             "Structural Engineering Innovation",
-            "Advanced Manufacturing Process",
-            "Automation Introduction"
+            # "Advanced Manufacturing Process",
+            # "Automation Introduction"
         ],
         "Negative": [
             "Knowledge Loss",
@@ -20,7 +20,7 @@ Events = {
             "Resource Depletion",
             "Infrastructure Strain",
             "Communication Breakdown",
-            "Tool Malfunction",
+            "Mass Tool Malfunction",
             "Technological Regression",
             "Overdependence on Technology",
             "Energy Crisis",
@@ -30,10 +30,10 @@ Events = {
     },
     "Cultural Event": {
         "Positive": [
-            "Artistic Flourish",
-            "Literary Creation",
+            # "Artistic Flourish",
+            # "Literary Creation",
             "Musical Innovation",
-            "Myth Creation",
+            # "Myth Creation",
             "Festival Celebration",
             "Spiritual Awakening",
             "Cultural Exchange",
@@ -216,6 +216,54 @@ Events = {
             "Political Strife",
             "Authoritarian Regime",
             "Civil War"
+        ]
+    },
+    # ========================================== | Inter-Civilization Interactions | ==========================================
+    "Inter-Civilization Interaction": {
+        "Positive": [
+            "Cultural Exchange",
+            "Joint Scientific Research",
+            "Mutual Defense Pact",
+            "Shared Religious Ceremony",
+            "Technological Collaboration",
+            "Resource Sharing Agreement",
+            "Trade Route Established",
+            "Joint Festival Celebration",
+            "Environmental Preservation Alliance",
+            "Diplomatic Delegation Visit",
+            "Peace Treaty Signed",
+            "Shared Infrastructure Development",
+            "Educational Exchange Program",
+            # "Common Language Adopted",
+            "Joint Exploration Expedition",
+            "Humanitarian Aid Support",
+            "Cultural Artifact Exchange",
+            "Shared Economic Development Initiative",
+            "Cross-Civilization Sports Competition",
+            "Unified Space Exploration Mission"
+        ],
+
+        "Negative": [
+            "Border Conflict",
+            "Resource Dispute",
+            "Espionage Operation Discovered",
+            "Religious Tension",
+            "Failed Negotiations",
+            "Accidental Skirmish",
+            "Cultural Misunderstanding",
+            "Technology Theft Incident",
+            "Trade Route Sabotage",
+            "Breakdown of Diplomatic Relations",
+            "Military Escalation",
+            "Exile of Foreign Diplomats",
+            "Economic Sanctions Imposed",
+            "Hostile Propaganda Campaign",
+            "Spy Network Exposed",
+            "Territorial Expansion Conflict",
+            "Political Assassination Attempt",
+            "Pirate Activity Disrupts Trade",
+            "Reparations Demanded",
+            "Refugee Crisis from Conflict"
         ]
     }
 }

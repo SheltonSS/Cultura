@@ -243,10 +243,10 @@ class Civilization:
 
         Civilization.year_progression = Civilization.calculate_year_progression()
 
-    def interact_with_neighbors(self):
+    def interact_with_neighbors(self, neighbor_interaction_limit = 5):
         """Interact with neighbors, adding or removing traits based on the interaction type."""
-        neighbor_interaction_limit = 5
-        cultural_crossing_limit = neighbor_interaction_limit // 2
+        
+        cultural_crossing_limit = max(2, neighbor_interaction_limit // 2)
 
         positive_interactions = 0
         negative_interactions = 0
