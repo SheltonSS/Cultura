@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import json
+from pandas.plotting import parallel_coordinates
 
 class ArtifactCharts:
     def __init__(self, analyzed_file='analyzed_artifacts.jsonl', output_dir='charts'):
@@ -38,22 +39,22 @@ class ArtifactCharts:
         fig.savefig(filepath, dpi=300, bbox_inches='tight')
         print(f"Chart saved to {filepath}")
 
-    def plot_cumulative_score_distribution(self):
-        """Plot the distribution of cumulative scores."""
-        df = self.artifacts_to_dataframe()
+    def plot_cumulative_score_distribution(self, type="all"):
+        """Plot the distribution of cumulative scores for the specified artifact type."""
+        df = self.artifacts_to_dataframe(type)
 
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         sns.histplot(df["cumulative_score"], kde=True, bins=20, color="blue", alpha=0.7)
-        plt.title("Distribution of Cumulative Scores", fontsize=16)
+        plt.title(f"Distribution of Cumulative Scores ({type.capitalize()})", fontsize=16)
         plt.xlabel("Cumulative Score", fontsize=12)
         plt.ylabel("Frequency", fontsize=12)
 
-        self.save_plot(plt.gcf(), "cumulative_score_distribution.png")
+        self.save_plot(plt.gcf(), f"cumulative_score_distribution_{type}.png")
 
-    def plot_narrative_vs_accuracy(self):
-        """Scatter plot of narrative integration vs. cultural accuracy."""
-        df = self.artifacts_to_dataframe()
+    def plot_narrative_vs_accuracy(self, type="all"):
+        """Scatter plot of narrative integration vs. cultural accuracy for the specified artifact type."""
+        df = self.artifacts_to_dataframe(type)
 
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
@@ -64,31 +65,16 @@ class ArtifactCharts:
             palette={"history": "lightblue", "neighbor": "lightgreen"},
             data=df
         )
-        plt.title("Narrative Integration vs. Cultural Accuracy", fontsize=16)
+        plt.title(f"Narrative Integration vs. Cultural Accuracy ({type.capitalize()})", fontsize=16)
         plt.xlabel("Narrative Integration", fontsize=12)
         plt.ylabel("Cultural Accuracy", fontsize=12)
         plt.legend(title="Generation Type")
 
-        self.save_plot(plt.gcf(), "narrative_vs_accuracy.png")
+        self.save_plot(plt.gcf(), f"narrative_vs_accuracy_{type}.png")
 
-    def plot_novelty_trend(self):
-        """Line plot of novelty scores over time."""
-        df = self.artifacts_to_dataframe()
-        df = df.sort_values(by="generation_time")
-
-        sns.set(style="whitegrid")
-        plt.figure(figsize=(10, 6))
-        sns.lineplot(x="generation_time", y="novelty_score", hue="generation_type", data=df, marker="o")
-        plt.title("Novelty Score Trend Over Time", fontsize=16)
-        plt.xlabel("Generation Time", fontsize=12)
-        plt.ylabel("Novelty Score", fontsize=12)
-        plt.legend(title="Generation Type")
-
-        self.save_plot(plt.gcf(), "novelty_trend.png")
-
-    def plot_metrics_by_generation_type(self):
-        """Bar plots to compare metrics across generation types."""
-        df = self.artifacts_to_dataframe()
+    def plot_metrics_by_generation_type(self, type="all"):
+        """Bar plots to compare metrics across generation types for the specified artifact type."""
+        df = self.artifacts_to_dataframe(type)
         metrics = ["narrative_integration", "cultural_accuracy", "novelty_score", "cumulative_score"]
 
         palette = {"history": "lightblue", "neighbor": "lightgreen"}
@@ -106,19 +92,43 @@ class ArtifactCharts:
                 palette=palette,
                 errorbar=None  
             )
-            axes[i].set_title(f"{metric.replace('_', ' ').title()} by Generation Type", fontsize=14)
+            axes[i].set_title(f"{metric.replace('_', ' ').title()} by Generation Type ({type.capitalize()})", fontsize=14)
             axes[i].set_xlabel("Generation Type", fontsize=12)
             axes[i].set_ylabel(metric.replace('_', ' ').title(), fontsize=12)
 
         plt.tight_layout()
-        self.save_plot(fig, "metrics_by_generation_type.png")
+        self.save_plot(fig, f"metrics_by_generation_type_{type}.png")
+    
+
+    def plot_multi_metric_comparison(self, type="all"):
+        """Create a parallel coordinates plot to compare multiple metrics."""
+        df = self.artifacts_to_dataframe(type)
+
+        # Filter only the relevant metrics and add 'generation_type' as a categorical column
+        metrics = ["narrative_integration", "cultural_accuracy", "novelty_score"]
+        df_subset = df[metrics + ["generation_type"]]
+
+        # Plot parallel coordinates
+        plt.figure(figsize=(12, 8))
+        parallel_coordinates(df_subset, "generation_type", 
+                             color=["blue", "green"], alpha=0.7, linewidth=1.5)
+        
+        plt.title(f"Multi-Metric Comparison ({type.capitalize()})", fontsize=16)
+        plt.xlabel("Metrics", fontsize=12)
+        plt.ylabel("Values", fontsize=12)
+        plt.legend(title="Generation Type", bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.grid(True)
+
+        self.save_plot(plt.gcf(), f"multi_metric_comparison_{type}.png")
 
     def generate_all_charts(self):
-        """Generate and save all charts."""
-        self.plot_cumulative_score_distribution()
-        self.plot_narrative_vs_accuracy()
-        # self.plot_novelty_trend()
-        self.plot_metrics_by_generation_type()
+        """Generate and save all charts for each type and combined."""
+        for artifact_type in ["all", "history", "neighbor"]:
+            self.plot_cumulative_score_distribution(type=artifact_type)
+            self.plot_narrative_vs_accuracy(type=artifact_type)
+            self.plot_metrics_by_generation_type(type=artifact_type)
+            self.plot_multi_metric_comparison(type=artifact_type)
+
 
 # if __name__ == "__main__":
 #     charts = ArtifactCharts()
