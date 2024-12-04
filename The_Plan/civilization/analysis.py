@@ -12,17 +12,21 @@ class ArtifactAnalyzer:
         self.analyzed_file = analyzed_file
         self.Civilization_Class = Civilization_Class
         self.existing_artifacts = self.load_artifacts()
+        self.previously_analyzed = self.load_artifacts(jsonl_file=self.analyzed_file)
 
-    def load_artifacts(self):
+    def load_artifacts(self, jsonl_file = None):
         """Load artifacts from a JSONL file."""
         artifacts = []
+        if jsonl_file is None:
+            jsonl_file = self.artifact_file
+
         try:
-            with open(self.artifact_file, 'r') as file:
+            with open(jsonl_file, 'r') as file:
                 for line in file:
                     artifact = json.loads(line)
                     artifacts.append(artifact)
         except FileNotFoundError:
-            print(f"Error: File {self.artifact_file} not found.")
+            print(f"Error: File {jsonl_file} not found.")
         return artifacts
 
     def save_artifacts(self, artifacts):
@@ -38,7 +42,7 @@ class ArtifactAnalyzer:
             return obj
 
         serializable_artifacts = [json.loads(json.dumps(artifact, default=convert_to_serializable)) for artifact in artifacts]
-        print(f" Saving artifacts: {serializable_artifacts}")
+        # print(f" Saving artifacts: {serializable_artifacts}")
         try:
             with open(self.analyzed_file, 'w') as file:
                 for artifact in serializable_artifacts:
@@ -95,14 +99,14 @@ class ArtifactAnalyzer:
         return accuracy, matched_keywords
 
     def calculate_novelty(self, artifact_description):
-        """Calculates the novelty score of the artifact description against existing artifacts."""
-        if not self.existing_artifacts:
+        """Calculates the novelty score of the artifact description against previously analyzed artifacts."""
+        if not self.previously_analyzed:
             return 1.0, []
 
         artifact_embedding = self.model.encode(artifact_description)
-        existing_embeddings = self.model.encode([artifact['Description'] for artifact in self.existing_artifacts])
+        previous_embeddings = self.model.encode([artifact['Description'] for artifact in self.previously_analyzed])
 
-        similarities = [cosine_similarity([artifact_embedding], [emb])[0][0] for emb in existing_embeddings]
+        similarities = [cosine_similarity([artifact_embedding], [emb])[0][0] for emb in previous_embeddings]
         novelty_score = 1 - np.mean(similarities)
         return novelty_score, similarities
 
@@ -145,11 +149,11 @@ class ArtifactAnalyzer:
         scores = self.cumulative_analysis_score(artifact)
         artifact.update(scores)
 
-        print(f"Artifact Analysis Scores:")
+        print(f"\nArtifact Analysis Score of {artifact['Name']}:")
         print(f"Narrative Integration: {scores['narrative_integration']}")
         print(f"Cultural Accuracy: {scores['cultural_accuracy']}")
         print(f"Novelty Score: {scores['novelty_score']}")
-        print(f"Cumulative Score: {scores['cumulative_score']}\n")
+        print(f"Cumulative Score: {scores['cumulative_score']}")
 
         return artifact
 

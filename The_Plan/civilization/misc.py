@@ -2,16 +2,7 @@ import math
 import json
 
 def calculate_distance(loc1, loc2):
-    """
-    Calculate the Euclidean distance between two points.
-
-    Parameters:
-    - loc1 (tuple): First location as (x, y).
-    - loc2 (tuple): Second location as (x, y).
-
-    Returns:
-    - float: Euclidean distance between the two points.
-    """
+    """Calculate the Euclidean distance between two points on a map."""
     return math.sqrt((loc1[0] - loc2[0]) ** 2 + (loc1[1] - loc2[1]) ** 2)
 
 def save_generated_artifact(generated_text, filename="artifact.jsonl"):
@@ -35,13 +26,3 @@ def save_generated_artifact(generated_text, filename="artifact.jsonl"):
         print(f"Failed to decode JSON: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-def convert_to_serializable(obj):
-            """Convert non-serializable objects to JSON-compatible types."""
-            if isinstance(obj, (np.float32, np.float64, float)):
-                return float(obj)
-            elif isinstance(obj, (np.int32, np.int64, int)):
-                return int(obj)
-            elif isinstance(obj, (np.ndarray, list)):
-                return obj.tolist()
-            return obj

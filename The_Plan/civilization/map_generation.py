@@ -3,8 +3,6 @@ import pygame
 import random
 from noise import pnoise2
 from scipy.ndimage import gaussian_filter
-import config
-# from civilization import Civilization
 
 class TerrainMap:
     def __init__(self, width=25, height=25, base_scale=40.0, octaves=6, persistence=0.5, lacunarity=2.0, seed=None):
