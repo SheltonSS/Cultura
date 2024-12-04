@@ -21,9 +21,14 @@ class ArtifactCharts:
             print(f"Error: File {self.analyzed_file} not found.")
         return artifacts
 
-    def artifacts_to_dataframe(self):
+    def artifacts_to_dataframe(self, type="all"):
         """Convert the list of artifacts to a Pandas DataFrame."""
-        return pd.DataFrame(self.artifacts)
+        if type == "all":
+            return pd.DataFrame(self.artifacts)
+        elif type == "history":
+            return pd.DataFrame([artifact for artifact in self.artifacts if artifact["generation_type"] == "history"])
+        elif type == "neighbor":
+            return pd.DataFrame([artifact for artifact in self.artifacts if artifact["generation_type"] == "neighbor"])
 
     def save_plot(self, fig, filename):
         """Save a plot as an image file in the output directory."""
@@ -56,7 +61,7 @@ class ArtifactCharts:
             x="narrative_integration", 
             y="cultural_accuracy", 
             hue="generation_type", 
-            palette="viridis", 
+            palette={"history": "lightblue", "neighbor": "lightgreen"},
             data=df
         )
         plt.title("Narrative Integration vs. Cultural Accuracy", fontsize=16)
@@ -86,6 +91,8 @@ class ArtifactCharts:
         df = self.artifacts_to_dataframe()
         metrics = ["narrative_integration", "cultural_accuracy", "novelty_score", "cumulative_score"]
 
+        palette = {"history": "lightblue", "neighbor": "lightgreen"}
+
         sns.set(style="whitegrid")
         fig, axes = plt.subplots(2, 2, figsize=(12, 10))
         axes = axes.flatten()
@@ -95,9 +102,9 @@ class ArtifactCharts:
                 x="generation_type", 
                 y=metric, 
                 data=df, 
-                palette="viridis", 
                 ax=axes[i],
-                ci=None
+                palette=palette,
+                errorbar=None  
             )
             axes[i].set_title(f"{metric.replace('_', ' ').title()} by Generation Type", fontsize=14)
             axes[i].set_xlabel("Generation Type", fontsize=12)
@@ -113,6 +120,6 @@ class ArtifactCharts:
         # self.plot_novelty_trend()
         self.plot_metrics_by_generation_type()
 
-if __name__ == "__main__":
-    charts = ArtifactCharts()
-    charts.generate_all_charts()
+# if __name__ == "__main__":
+#     charts = ArtifactCharts()
+#     charts.generate_all_charts()

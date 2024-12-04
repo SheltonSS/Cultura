@@ -72,17 +72,17 @@ class TerrainMap:
             # Create an irregular, organic shape for the forest
             forest_cells = [(start_x, start_y)]
             visited = set(forest_cells)
-            direction_offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+            direction_offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
             # Grow the forest by expanding in random directions
             while len(forest_cells) < forest_size:
                 new_cells = []
                 for x, y in forest_cells:
-                    random.shuffle(direction_offsets)  # Randomize direction
+                    random.shuffle(direction_offsets)
                     for dx, dy in direction_offsets:
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < self.height and 0 <= ny < self.width:
-                            if self.terrain_map[nx, ny] != 3 and (nx, ny) not in visited:  # Avoid mountains
+                            if self.terrain_map[nx, ny] != 3 and (nx, ny) not in visited:
                                 new_cells.append((nx, ny))
                                 visited.add((nx, ny))
 

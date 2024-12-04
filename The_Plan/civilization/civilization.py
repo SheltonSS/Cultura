@@ -20,7 +20,8 @@ class Civilization:
     Default_R = int(min(map.width, map.height) * 1)  # Default range
     Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
-    progress_point_limit = 5
+    event_limit = 5
+    neighbor_interaction_limit = 5
     current_year = -4000
     year_progression = 50
     existing_artifacts = []
@@ -57,7 +58,7 @@ class Civilization:
                 print(f"Could not find a valid location for {civ.name}.")
                 return None  # or raise an exception, or retry based on your use case
             x, y = location
-        print(f"Attempting to place {civ.name} at x: {x}, y: {y}")
+        # print(f"Attempting to place {civ.name} at x: {x}, y: {y}")
 
         # Check if the spot is available by ensuring no other civilization is placed at this spot
         if not any(civ.location == (x, y) for civ in Civilization.Civilizations): 
@@ -76,7 +77,7 @@ class Civilization:
         terrain_map = Civilization.map.get_terrain_map()  # Correct way to access the terrain map
         width = len(terrain_map)
         height = len(terrain_map[0]) if width > 0 else 0
-        print(f"width: {width}, height: {height}")
+        # print(f"width: {width}, height: {height}")
         
         max_attempts = 100  # Safeguard to prevent infinite loop
         attempts = 0
@@ -113,7 +114,7 @@ class Civilization:
 
         # Assign location if not provided
         self.location = location or Civilization.place_civilization(self)
-        print(f"{self.name} has been placed at {self.location}")
+        # print(f"{self.name} has been placed at {self.location}")
 
         # Set terrain type based on the location
         self.terrain_type = Civilization.map.get_terrain_map()[self.location[0]][self.location[1]]
@@ -263,7 +264,7 @@ class Civilization:
             self.history.append(f"{self.name} has progressed to the {config.Tech_eras[self.tech_level]} era.")
 
         # Add or remove traits
-        if random.random() > 0.5:  # 50% chance to gain a new trait
+        if random.random() > 0.7:  # 30% chance to gain a new trait
             new_trait = random.choice(["Visionary", "Pragmatic", "Ambitious", "Altruistic"])
             if new_trait not in self.traits:
                 self.traits.append(new_trait)
@@ -296,26 +297,29 @@ class Civilization:
         # Update cultural context
         self.cultural_context = self.generate_cultural_context()
 
-    def progress_age(self):
+    def progress_age(self,event_limit = None):
         """Progress the civilization through an age."""
         # Civilization.current_year += Civilization.year_progression
-        progress_points = 0
+        event_cnt = 0
         positive_outcomes = 0
         negative_outcomes = 0
 
-        while progress_points < Civilization.progress_point_limit:
+        if event_limit is None:
+             event_limit = Civilization.event_limit
+
+        while event_cnt < event_limit:
             event = event_picker.select_event()
-            progress_points += 1
+            event_cnt += 1
             if event["Outcome"] == "Positive":
                 positive_outcomes += 1
             else:
                 negative_outcomes += 1
             self.history.append(f"{event['Outcome']} {event['EventType']}: {event['Event']}")
-
-        if positive_outcomes > negative_outcomes:
-            self.progress_era()
-        elif negative_outcomes > positive_outcomes:
-            self.regress_era()
+        if random.random() > 0.7: # 30% chance to progress or regress
+            if positive_outcomes > negative_outcomes:
+                self.progress_era()
+            elif negative_outcomes > positive_outcomes:
+                self.regress_era()
 
         print(f"\n ================================\n History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
         for history_entry in self.history:
@@ -323,14 +327,16 @@ class Civilization:
 
         Civilization.year_progression = Civilization.calculate_year_progression()
 
-    def interact_with_neighbors(self, neighbor_interaction_limit = 5):
+    def interact_with_neighbors(self, neighbor_interaction_limit = None):
         """Interact with neighbors, adding or removing traits based on the interaction type."""
         
-        cultural_crossing_limit = max(2, neighbor_interaction_limit // 2)
+        if neighbor_interaction_limit is None:
+            neighbor_interaction_limit = Civilization.neighbor_interaction_limit
 
         positive_interactions = 0
         negative_interactions = 0
         criss_cross = ""
+        criss_cross_limit = max(1, neighbor_interaction_limit // 2)
 
         for _ in range(neighbor_interaction_limit):
             event = event_picker.select_neighbor_event()
@@ -339,7 +345,7 @@ class Civilization:
                 if event["Outcome"] == "Positive":
                     positive_interactions += 1
                     # Check if positive interactions exceed the threshold for cultural exchange
-                    if positive_interactions > cultural_crossing_limit:
+                    if positive_interactions > criss_cross_limit:
                         # Cross-cultural exchange
                         self_trait = random.choice(self.traits) 
                         neighbor_trait = random.choice(neighbor.traits)

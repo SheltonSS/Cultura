@@ -128,6 +128,7 @@ Events = {
             "Severe Storm",
             "Earthquake",
             "Tsunami",
+            "Intense Heatwave",
             "Frostbite Winter",
             "Insect Plague",
             "Wildfire",
@@ -239,8 +240,8 @@ Events = {
             "Humanitarian Aid Support",
             "Cultural Artifact Exchange",
             "Shared Economic Development Initiative",
-            "Cross-Civilization Sports Competition",
-            "Unified Space Exploration Mission"
+            "Cross-Civilization Sports Competition"
+            # "Unified Space Exploration Mission"
         ],
 
         "Negative": [
