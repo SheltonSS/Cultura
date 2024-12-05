@@ -56,7 +56,14 @@ class ArtifactAnalyzer:
 
     def calculate_narrative_integration(self, artifact, civ):
         """Calculate the narrative integration score between the artifact and civilization history."""
-        artifact_description = artifact.get('Description', '').strip()
+        
+        artifact_description = (
+            artifact.get('Name', '').strip() + " " +
+            artifact.get('Description', '').strip() + " " +
+            artifact.get('Purpose', '').strip()
+        )
+        
+
         if not artifact_description:
             print("Artifact description is missing or empty.")
             return 0.0
@@ -123,10 +130,16 @@ class ArtifactAnalyzer:
                 "cumulative_score": 0.0,
                 "matched_keywords": []
             }
+        
+        artifact_description = (
+            artifact.get('Name', '').strip() + " " +
+            artifact.get('Description', '').strip() + " " +
+            artifact.get('Purpose', '').strip()
+        )
 
         narrative_integration = self.calculate_narrative_integration(artifact, civ)
-        cultural_accuracy, matched_keywords = self.calculate_cultural_accuracy(artifact['Description'], civ)
-        novelty_score, _ = self.calculate_novelty(artifact['Description'])
+        cultural_accuracy, matched_keywords = self.calculate_cultural_accuracy(artifact_description, civ)
+        novelty_score, _ = self.calculate_novelty(artifact_description)
 
         normalized_narrative_integration = (narrative_integration + 1) / 2
         cumulative_score = (normalized_narrative_integration * narrative_weight +
@@ -187,3 +200,4 @@ class ArtifactAnalyzer:
         average_score = np.mean([artifact['cumulative_score'] for artifact in analyzed_artifacts])
         self.clear_artifact_file()
         return average_score
+    

@@ -44,10 +44,9 @@ class CulturaSimulation:
     def generate_civilizations(self):
         """Generate a specified number of civilizations."""
         for i in range(self.civs):
-            civ = Civilization(name=f"Civ{len(self.civilizations) + 1}",
-                               location=(random.randint(0, self.height - 1), random.randint(0, self.width - 1)))
-            self.civilizations.append(civ)
-            print(f"Generated civilization #{i + 1}: {civ.name} at {civ.location}")
+            Civilization()
+            # self.civilizations.append(civ)
+            print(f"Generated civilization #{i + 1}: {Civilization.Civilizations[i].name} at {Civilization.Civilizations[i].location}")
 
     def progress_simulation(self):
         """Run the simulation for a specified number of steps."""
@@ -65,16 +64,16 @@ class CulturaSimulation:
         }
 
         # Draw the terrain map
-        print("Visualizing terrain...")
+        # print("Visualizing terrain...")
         for i in range(self.height):
             for j in range(self.width):
                 terrain_type = self.terrain_map[i, j]
-                color = terrain_colors.get(terrain_type, (255, 255, 255))  # Default to white if unknown
+                color = terrain_colors.get(terrain_type, (255, 255, 255))
                 pygame.draw.rect(self.screen, color, (j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size))
 
     def visualize_civilizations(self):
         """Visualize the civilizations on the terrain map."""
-        print("Visualizing civilizations...")
+        # print("Visualizing civilizations...")
         for civ in self.civilizations:
             x, y = civ.location
             pygame.draw.circle(self.screen, (255, 0, 0), (y * self.cell_size + self.cell_size // 2, 
@@ -92,7 +91,7 @@ class CulturaSimulation:
                 if event.type == pygame.QUIT:
                     running = False
 
-            self.screen.fill((255, 255, 255))  # Clear screen
+            self.screen.fill((255, 255, 255))
             self.visualize_terrain()
             self.visualize_civilizations()
             self.update_display()
@@ -123,5 +122,12 @@ class CulturaSimulation:
 
 if __name__ == "__main__":
     # Start the simulation with desired parameters
-    simulation = CulturaSimulation(civs=2, dev_mode=True, steps=1)
-    simulation.start_simulation()
+    simulations = 3
+    civs = 2
+    steps = 2
+    for i in range(simulations):
+        print(f"\nStarting simulation #{i + 1} with {civs} civilizations and {steps} steps...\n")
+        simulation = CulturaSimulation(civs=2, dev_mode=True, steps=2)
+        simulation.start_simulation()
+        civs += 1
+        steps *=2

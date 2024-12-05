@@ -7,6 +7,7 @@ import event_picker
 import misc
 import map_generation
 import json
+from datetime import datetime
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -17,7 +18,7 @@ class Civilization:
     map = map_generation.TerrainMap()
     Civilizations = []
     Civilizations_by_name = {}
-    Default_R = int(min(map.width, map.height) * 1)  # Default range
+    Default_R = int(min(map.width, map.height) * 1)
     Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
     event_limit = 5
@@ -238,6 +239,7 @@ class Civilization:
             artifact_data["generation_type"] = generation_type
             artifact_data["Year Made"] = f"{abs(year_made_I)} {'BC' if year_made_I  < 0 else 'AD'}"
             artifact_data["Civilization Name"] = self.name
+            artifact_data["Time_Generated"] = datetime.now().isoformat()
             artifact_description = json.dumps(artifact_data, indent=2)
 
             if generation_type == "history":

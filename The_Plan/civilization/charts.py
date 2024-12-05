@@ -99,7 +99,6 @@ class ArtifactCharts:
         plt.tight_layout()
         self.save_plot(fig, f"metrics_by_generation_type_{type}.png")
     
-
     def plot_multi_metric_comparison(self, type="all"):
         """Create a parallel coordinates plot to compare multiple metrics."""
         df = self.artifacts_to_dataframe(type)
@@ -120,6 +119,97 @@ class ArtifactCharts:
         plt.grid(True)
 
         self.save_plot(plt.gcf(), f"multi_metric_comparison_{type}.png")
+    
+    def generate_time_based_chart(self):
+        """Generate a chart showing the change in scores over time for both generation types."""
+        artifacts = self.load_artifacts()
+
+        # Create a DataFrame with the relevant data
+        data = []
+        for artifact in artifacts:
+            data.append({
+                'TimeGenerated': artifact.get('Time_Generated'),
+                'GenerationType': artifact.get('generation_type'),
+                'CumulativeScore': artifact.get('cumulative_score', 0.0),
+                'NarrativeIntegration': artifact.get('narrative_integration', 0.0),
+                'NoveltyScore': artifact.get('novelty_score', 0.0),
+                'CulturalAccuracy': artifact.get('cultural_accuracy', 0.0)
+            })
+
+        df = pd.DataFrame(data)
+
+        # Convert 'TimeGenerated' to a datetime format
+        df['TimeGenerated'] = pd.to_datetime(df['TimeGenerated'])
+
+        # Plot scores over time for both generation types
+        metrics = ['CumulativeScore', 'NarrativeIntegration', 'NoveltyScore', 'CulturalAccuracy']
+        plt.figure(figsize=(16, 10))
+
+        for i, metric in enumerate(metrics, 1):
+            plt.subplot(2, 2, i)
+            for gen_type, group in df.groupby(['GenerationType']):
+                group = group.sort_values(by='TimeGenerated')
+                plt.plot(
+                    group['TimeGenerated'], 
+                    group[metric], 
+                    marker='o', 
+                    label=f'{gen_type}'
+                )
+
+            plt.title(f'{metric} Over Time')
+            plt.xlabel('Time Generated')
+            plt.ylabel(metric)
+            plt.legend(loc='best', fontsize='small')
+            plt.grid(True)
+
+        plt.tight_layout()
+        self.save_plot(plt.gcf(), 'score_change_over_time.png')
+
+    # def generate_detailed_time_based_chart(self):
+    #     """Generate a detailed chart showing the change in all scores over time."""
+    #     artifacts = self.load_artifacts()
+
+    #     # Create a DataFrame
+    #     data = []
+    #     for artifact in artifacts:
+    #         data.append({
+    #             'TimeGenerated': artifact.get('Time_Generated'),
+    #             'CivilizationName': artifact.get('Civilization Name'),
+    #             'GenerationType': artifact.get('generation_type'),
+    #             'NarrativeIntegration': artifact.get('narrative_integration', 0.0),
+    #             'CulturalAccuracy': artifact.get('cultural_accuracy', 0.0),
+    #             'NoveltyScore': artifact.get('novelty_score', 0.0),
+    #             'CumulativeScore': artifact.get('cumulative_score', 0.0)
+    #         })
+
+    #     df = pd.DataFrame(data)
+
+    #     # Convert 'TimeGenerated' to a datetime format
+    #     df['TimeGenerated'] = pd.to_datetime(df['TimeGenerated'])
+
+    #     # Plot scores over time
+    #     metrics = ['NarrativeIntegration', 'CulturalAccuracy', 'NoveltyScore', 'CumulativeScore']
+    #     plt.figure(figsize=(16, 10))
+
+    #     for i, metric in enumerate(metrics, 1):
+    #         plt.subplot(2, 2, i)
+    #         for (civ_name, gen_type), group in df.groupby(['CivilizationName', 'GenerationType']):
+    #             group = group.sort_values(by='TimeGenerated')
+    #             plt.plot(
+    #                 group['TimeGenerated'], 
+    #                 group[metric], 
+    #                 marker='o', 
+    #                 label=f'{civ_name} ({gen_type})'
+    #             )
+
+    #         plt.title(f'{metric} Over Time')
+    #         plt.xlabel('Time Generated')
+    #         plt.ylabel(metric)
+    #         plt.legend(loc='best', fontsize='small')
+    #         plt.grid(True)
+
+    #     plt.tight_layout()
+    #     self.save_plot(plt.gcf(), 'all_scores_change_over_time.png')
 
     def generate_all_charts(self):
         """Generate and save all charts for each type and combined."""
@@ -129,7 +219,10 @@ class ArtifactCharts:
             self.plot_metrics_by_generation_type(type=artifact_type)
             self.plot_multi_metric_comparison(type=artifact_type)
 
+        # Generate and save the time-based charts
+        self.generate_time_based_chart()
+        # self.generate_detailed_time_based_chart()
 
-# if __name__ == "__main__":
-#     charts = ArtifactCharts()
-#     charts.generate_all_charts()
+if __name__ == "__main__":
+    charts = ArtifactCharts()
+    charts.generate_all_charts()
