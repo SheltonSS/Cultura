@@ -1,31 +1,25 @@
 import random
 import events
 
-def select_random_event(event_type_key):
+def select_event(event_type_key=None, exclude_key="Inter-Civilization Interaction"):
     """
-    Selects a random event from the given event type key.
+    Selects a random event. If `event_type_key` is specified, selects from that type.
+    If not, selects from all event types, optionally excluding a specific key.
 
     Parameters:
-    event_type_key (str): The key for the event type in the events dictionary.
+    event_type_key (str, optional): Specific event type to select from.
+    exclude_key (str, optional): Event type to exclude when selecting randomly.
 
     Returns:
     dict: A dictionary containing the event type, outcome, and name.
     """
+    if event_type_key is None:
+        event_type_keys = [key for key in events.Events if key != exclude_key]
+        event_type_key = random.choice(event_type_keys)
+
     event_type = events.Events[event_type_key]
-    event_outcome = random.choice(["Positive", "Negative"])
-    event_name = random.choice(event_type[event_outcome])
-
-    return {"EventType": event_type_key, "Outcome": event_outcome, "Event": event_name}
-
-def select_event():
-    """
-    Selects a random event from all event types excluding "Inter-Civilization Interaction".
-    """
-    event_type_keys = [key for key in events.Events.keys() if key != "Inter-Civilization Interaction"]
-    return select_random_event(random.choice(event_type_keys))
-
-def select_neighbor_event():
-    """
-    Selects a random event from the "Inter-Civilization Interaction" event type.
-    """
-    return select_random_event("Inter-Civilization Interaction")
+    return {
+        "EventType": event_type_key,
+        "Outcome": (outcome := random.choice(["Positive", "Negative"])),
+        "Event": random.choice(event_type[outcome]),
+    }

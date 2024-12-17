@@ -1,5 +1,5 @@
 import numpy as np
-import pygame
+# import pygame
 import random
 from noise import pnoise2
 from scipy.ndimage import gaussian_filter

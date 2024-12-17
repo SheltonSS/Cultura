@@ -3,6 +3,8 @@ import seaborn as sns
 import pandas as pd
 import json
 from pandas.plotting import parallel_coordinates
+import itertools
+
 
 class ArtifactCharts:
     def __init__(self, analyzed_file='analyzed_artifacts.jsonl', output_dir='charts'):
@@ -39,6 +41,11 @@ class ArtifactCharts:
         fig.savefig(filepath, dpi=300, bbox_inches='tight')
         print(f"Chart saved to {filepath}")
 
+    @staticmethod
+    def clean_label(label):
+        """Convert labels like 'narrative_integration' to 'Narrative Integration'."""
+        return label.replace('_', ' ').title()
+
     def plot_cumulative_score_distribution(self, type="all"):
         """Plot the distribution of cumulative scores for the specified artifact type."""
         df = self.artifacts_to_dataframe(type)
@@ -47,7 +54,7 @@ class ArtifactCharts:
         plt.figure(figsize=(10, 6))
         sns.histplot(df["cumulative_score"], kde=True, bins=20, color="blue", alpha=0.7)
         plt.title(f"Distribution of Cumulative Scores ({type.capitalize()})", fontsize=16)
-        plt.xlabel("Cumulative Score", fontsize=12)
+        plt.xlabel(self.clean_label("cumulative_score"), fontsize=12)
         plt.ylabel("Frequency", fontsize=12)
 
         self.save_plot(plt.gcf(), f"cumulative_score_distribution_{type}.png")
@@ -59,15 +66,15 @@ class ArtifactCharts:
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
         sns.scatterplot(
-            x="narrative_integration", 
-            y="cultural_accuracy", 
-            hue="generation_type", 
+            x="narrative_integration",
+            y="cultural_accuracy",
+            hue="generation_type",
             palette={"history": "lightblue", "neighbor": "lightgreen"},
             data=df
         )
-        plt.title(f"Narrative Integration vs. Cultural Accuracy ({type.capitalize()})", fontsize=16)
-        plt.xlabel("Narrative Integration", fontsize=12)
-        plt.ylabel("Cultural Accuracy", fontsize=12)
+        plt.title(f"{self.clean_label('narrative_integration')} vs. {self.clean_label('cultural_accuracy')} ({type.capitalize()})", fontsize=16)
+        plt.xlabel(self.clean_label("narrative_integration"), fontsize=12)
+        plt.ylabel(self.clean_label("cultural_accuracy"), fontsize=12)
         plt.legend(title="Generation Type")
 
         self.save_plot(plt.gcf(), f"narrative_vs_accuracy_{type}.png")
@@ -85,33 +92,30 @@ class ArtifactCharts:
 
         for i, metric in enumerate(metrics):
             sns.barplot(
-                x="generation_type", 
-                y=metric, 
-                data=df, 
+                x="generation_type",
+                y=metric,
+                data=df,
                 ax=axes[i],
                 palette=palette,
-                errorbar=None  
+                errorbar=None
             )
-            axes[i].set_title(f"{metric.replace('_', ' ').title()} by Generation Type ({type.capitalize()})", fontsize=14)
+            axes[i].set_title(f"{self.clean_label(metric)} by Generation Type ({type.capitalize()})", fontsize=14)
             axes[i].set_xlabel("Generation Type", fontsize=12)
-            axes[i].set_ylabel(metric.replace('_', ' ').title(), fontsize=12)
+            axes[i].set_ylabel(self.clean_label(metric), fontsize=12)
 
         plt.tight_layout()
         self.save_plot(fig, f"metrics_by_generation_type_{type}.png")
-    
+
     def plot_multi_metric_comparison(self, type="all"):
         """Create a parallel coordinates plot to compare multiple metrics."""
         df = self.artifacts_to_dataframe(type)
 
-        # Filter only the relevant metrics and add 'generation_type' as a categorical column
         metrics = ["narrative_integration", "cultural_accuracy", "novelty_score"]
         df_subset = df[metrics + ["generation_type"]]
 
-        # Plot parallel coordinates
         plt.figure(figsize=(12, 8))
-        parallel_coordinates(df_subset, "generation_type", 
-                             color=["blue", "green"], alpha=0.7, linewidth=1.5)
-        
+        parallel_coordinates(df_subset, "generation_type", color=["blue", "green"], alpha=0.7, linewidth=1.5)
+
         plt.title(f"Multi-Metric Comparison ({type.capitalize()})", fontsize=16)
         plt.xlabel("Metrics", fontsize=12)
         plt.ylabel("Values", fontsize=12)
@@ -119,109 +123,67 @@ class ArtifactCharts:
         plt.grid(True)
 
         self.save_plot(plt.gcf(), f"multi_metric_comparison_{type}.png")
-    
-    def generate_time_based_chart(self):
-        """Generate a chart showing the change in scores over time for both generation types."""
-        artifacts = self.load_artifacts()
 
-        # Create a DataFrame with the relevant data
-        data = []
-        for artifact in artifacts:
-            data.append({
-                'TimeGenerated': artifact.get('Time_Generated'),
-                'GenerationType': artifact.get('generation_type'),
-                'CumulativeScore': artifact.get('cumulative_score', 0.0),
-                'NarrativeIntegration': artifact.get('narrative_integration', 0.0),
-                'NoveltyScore': artifact.get('novelty_score', 0.0),
-                'CulturalAccuracy': artifact.get('cultural_accuracy', 0.0)
-            })
+    def plot_metric_combinations(self, type="all"):
+        """Generate scatter plots comparing every combination of two metrics with trend lines."""
+        df = self.artifacts_to_dataframe(type)
 
-        df = pd.DataFrame(data)
+        metrics = ["narrative_integration", "cultural_accuracy", "novelty_score", "cumulative_score"]
+        combinations = list(itertools.combinations(metrics, 2))
 
-        # Convert 'TimeGenerated' to a datetime format
-        df['TimeGenerated'] = pd.to_datetime(df['TimeGenerated'])
+        sns.set(style="whitegrid")
+        n_combinations = len(combinations)
+        n_cols = 2
+        n_rows = (n_combinations + n_cols - 1) // n_cols
 
-        # Plot scores over time for both generation types
-        metrics = ['CumulativeScore', 'NarrativeIntegration', 'NoveltyScore', 'CulturalAccuracy']
-        plt.figure(figsize=(16, 10))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 6 * n_rows))
+        axes = axes.flatten()
 
-        for i, metric in enumerate(metrics, 1):
-            plt.subplot(2, 2, i)
-            for gen_type, group in df.groupby(['GenerationType']):
-                group = group.sort_values(by='TimeGenerated')
-                plt.plot(
-                    group['TimeGenerated'], 
-                    group[metric], 
-                    marker='o', 
-                    label=f'{gen_type}'
-                )
+        for i, (metric_x, metric_y) in enumerate(combinations):
+            ax = axes[i]
+            sns.scatterplot(
+                x=metric_x,
+                y=metric_y,
+                hue="generation_type",
+                data=df,
+                ax=ax,
+                palette={"history": "lightblue", "neighbor": "lightgreen"},
+                alpha=0.8,
+            )
+            sns.regplot(
+                x=metric_x,
+                y=metric_y,
+                data=df,
+                scatter=False,
+                ax=ax,
+                color="red",
+                line_kws={"linewidth": 1.5},
+            )
+            ax.set_title(f"{self.clean_label(metric_x)} vs. {self.clean_label(metric_y)} ({type.capitalize()})")
+            ax.set_xlabel(self.clean_label(metric_x))
+            ax.set_ylabel(self.clean_label(metric_y))
+            ax.legend(title="Generation Type", loc="best", fontsize="small")
 
-            plt.title(f'{metric} Over Time')
-            plt.xlabel('Time Generated')
-            plt.ylabel(metric)
-            plt.legend(loc='best', fontsize='small')
-            plt.grid(True)
+        for i in range(len(combinations), len(axes)):
+            fig.delaxes(axes[i])
 
         plt.tight_layout()
-        self.save_plot(plt.gcf(), 'score_change_over_time.png')
-
-    # def generate_detailed_time_based_chart(self):
-    #     """Generate a detailed chart showing the change in all scores over time."""
-    #     artifacts = self.load_artifacts()
-
-    #     # Create a DataFrame
-    #     data = []
-    #     for artifact in artifacts:
-    #         data.append({
-    #             'TimeGenerated': artifact.get('Time_Generated'),
-    #             'CivilizationName': artifact.get('Civilization Name'),
-    #             'GenerationType': artifact.get('generation_type'),
-    #             'NarrativeIntegration': artifact.get('narrative_integration', 0.0),
-    #             'CulturalAccuracy': artifact.get('cultural_accuracy', 0.0),
-    #             'NoveltyScore': artifact.get('novelty_score', 0.0),
-    #             'CumulativeScore': artifact.get('cumulative_score', 0.0)
-    #         })
-
-    #     df = pd.DataFrame(data)
-
-    #     # Convert 'TimeGenerated' to a datetime format
-    #     df['TimeGenerated'] = pd.to_datetime(df['TimeGenerated'])
-
-    #     # Plot scores over time
-    #     metrics = ['NarrativeIntegration', 'CulturalAccuracy', 'NoveltyScore', 'CumulativeScore']
-    #     plt.figure(figsize=(16, 10))
-
-    #     for i, metric in enumerate(metrics, 1):
-    #         plt.subplot(2, 2, i)
-    #         for (civ_name, gen_type), group in df.groupby(['CivilizationName', 'GenerationType']):
-    #             group = group.sort_values(by='TimeGenerated')
-    #             plt.plot(
-    #                 group['TimeGenerated'], 
-    #                 group[metric], 
-    #                 marker='o', 
-    #                 label=f'{civ_name} ({gen_type})'
-    #             )
-
-    #         plt.title(f'{metric} Over Time')
-    #         plt.xlabel('Time Generated')
-    #         plt.ylabel(metric)
-    #         plt.legend(loc='best', fontsize='small')
-    #         plt.grid(True)
-
-    #     plt.tight_layout()
-    #     self.save_plot(plt.gcf(), 'all_scores_change_over_time.png')
+        self.save_plot(fig, f"metric_combinations_{type}.png")
 
     def generate_all_charts(self):
-        """Generate and save all charts for each type and combined."""
-        for artifact_type in ["all", "history", "neighbor"]:
+        """Generate all charts for all artifact types."""
+        types = ["all", "history", "neighbor"]
+
+        for artifact_type in types:
+            print(f"Generating charts for {artifact_type} artifacts...")
             self.plot_cumulative_score_distribution(type=artifact_type)
             self.plot_narrative_vs_accuracy(type=artifact_type)
             self.plot_metrics_by_generation_type(type=artifact_type)
             self.plot_multi_metric_comparison(type=artifact_type)
+            self.plot_metric_combinations(type=artifact_type)
 
-        # Generate and save the time-based charts
-        self.generate_time_based_chart()
-        # self.generate_detailed_time_based_chart()
+        print("All charts have been generated and saved.")
+
 
 if __name__ == "__main__":
     charts = ArtifactCharts()

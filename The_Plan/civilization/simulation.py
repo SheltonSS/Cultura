@@ -1,4 +1,4 @@
-import pygame
+# import pygame
 from civilization import Civilization
 from charts import ArtifactCharts
 import analysis
@@ -6,21 +6,22 @@ from map_generation import TerrainMap
 import random
 
 class CulturaSimulation:
-    def __init__(self, civs=2, dev_mode=False, steps=2, width=25, height=25):
+    def __init__(self, civs=2, dev_mode=False, steps=2, width=25, height=25,speed_multiplier=1):
         self.civs = civs
         self.dev_mode = dev_mode
         self.steps = steps
         self.width = width
         self.height = height
         self.civiliation_class = Civilization
+        self.civiliation_class.speed_multiplier = speed_multiplier
         self.civilizations = []
         self.terrain_map = self.civiliation_class.map.get_terrain_map()
         # self.terrain_map = TerrainMap(width=width, height=height, base_scale=40.0, octaves=6)
 
         # Set up Pygame window
-        self.cell_size = 20
-        self.screen = pygame.display.set_mode((self.width * self.cell_size, self.height * self.cell_size))
-        pygame.display.set_caption("Cultura: Civilization Simulation")
+        # self.cell_size = 20
+        # self.screen = pygame.display.set_mode((self.width * self.cell_size, self.height * self.cell_size))
+        # pygame.display.set_caption("Cultura: Civilization Simulation")
 
     def print_intro(self):
         """Print the introduction banner for the simulation."""
@@ -109,25 +110,30 @@ class CulturaSimulation:
 
         # Generate civilizations
         self.generate_civilizations()
+        
+        print (Civilization.Civilizations[-1].cultural_context)
 
         # Run the simulation
         self.progress_simulation()
 
-        # Analyze and create charts
-        self.analyze_artifacts()
-        self.create_charts()
+        # # Analyze and create charts
+        # self.analyze_artifacts()
+        # self.create_charts()
 
-        # Run the visualization
-        self.run_visualization()
+        # ****************** TO DO ****************** #
+        #             Run the visualization           #
+        #            self.run_visualization()         #
+        # ******************************************* #
 
 if __name__ == "__main__":
     # Start the simulation with desired parameters
-    simulations = 3
+    simulations = 1
     civs = 2
-    steps = 2
+    steps = 1
     for i in range(simulations):
         print(f"\nStarting simulation #{i + 1} with {civs} civilizations and {steps} steps...\n")
-        simulation = CulturaSimulation(civs=2, dev_mode=True, steps=2)
+        simulation = CulturaSimulation(civs=civs, dev_mode=True, steps=steps,speed_multiplier=4)
         simulation.start_simulation()
+
         civs += 1
-        steps *=2
+        steps = steps ** 2

@@ -26,6 +26,7 @@ class Civilization:
     current_year = -4000
     year_progression = 50
     existing_artifacts = []
+    speed_multiplier = 1
 
     @staticmethod
     def get_string_year():
@@ -130,6 +131,7 @@ class Civilization:
         self.history = [f"Founded {self.name} in a {self.get_terrain_description()} region during the {config.Tech_eras[self.tech_level]} era."]
         self.neighbors = []
         self.neighbor_history = []
+        
 
         # Update civilization-wide properties
         Civilization.year_progression = Civilization.calculate_year_progression()
@@ -240,6 +242,7 @@ class Civilization:
             artifact_data["Year Made"] = f"{abs(year_made_I)} {'BC' if year_made_I  < 0 else 'AD'}"
             artifact_data["Civilization Name"] = self.name
             artifact_data["Time_Generated"] = datetime.now().isoformat()
+            print (f"\nArtifact: {artifact_data}")
             artifact_description = json.dumps(artifact_data, indent=2)
 
             if generation_type == "history":
@@ -341,7 +344,7 @@ class Civilization:
         criss_cross_limit = max(1, neighbor_interaction_limit // 2)
 
         for _ in range(neighbor_interaction_limit):
-            event = event_picker.select_neighbor_event()
+            event = event_picker.select_event(event_type_key="Inter-Civilization Interaction")
 
             for neighbor in self.neighbors:
                 if event["Outcome"] == "Positive":
@@ -372,16 +375,16 @@ class Civilization:
                     criss_cross = ""
         # Print the neighbor history for this civilization
         print("\n================\n")
-        for history_entry in self.neighbor_history:
+        for history_entry in self.neighbor_history[-20:]: # only print the last 20 entries
             print(history_entry)
 
     @staticmethod
-    def calculate_year_progression():
+    def calculate_year_progression(speed_multiplier = 1):
         """Calculate year progression based on the average tech level."""
         if not Civilization.Civilizations:
             return 100
         avg_tech_level = sum(civ.tech_level for civ in Civilization.Civilizations) / len(Civilization.Civilizations)
-        return max(1, int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5)))
+        return max(1, int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5))) * speed_multiplier
 
     @staticmethod
     def progress_and_interact_all_civilizations(steps=5):
@@ -390,13 +393,15 @@ class Civilization:
             for civilization in Civilization.Civilizations:
                 civilization.progress_age()
                 artifact = civilization.generate_cultural_artifacts()
-                # print(f"Generated Historical Artifact: {artifact}")
+                print(f"Generated Artifact JSON: {artifact}")
             
                 misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
-                artifact = civilization.generate_cultural_artifacts(generation_type = "neighbor")
-                # print(f"Generated Interaction Artifact: {artifact}")
-                misc.save_generated_artifact(artifact)
+
+                if len(Civilization.Civilizations) > 1:
+                    artifact = civilization.generate_cultural_artifacts(generation_type = "neighbor")
+                    # print(f"Generated Interaction Artifact: {artifact}")
+                    misc.save_generated_artifact(artifact)
 
             Civilization.current_year += Civilization.year_progression
             Civilization.year_progression = Civilization.calculate_year_progression()
