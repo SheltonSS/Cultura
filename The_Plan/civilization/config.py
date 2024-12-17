@@ -151,36 +151,37 @@ test_terrain = [
 
 base_traits = {
     0: [  # Water
-        "Maritime Navigators", "Coastal Resilient", "Oceanic Explorers", 
-        "Fishing Experts", "Trade Voyagers", "Storm Survivors", 
-        "Seafaring Innovators", "Tide Whisperers", "Resourceful Mariners"
+        "Skilled Mariners", "Coastal Survivors", "Ocean Navigators", 
+        "Expert Fishers", "Trade Route Explorers", "Storm Resilient", 
+        "Seafaring Innovators", "Tide Predictors", "Efficient Resource Harvesters"
     ],
     1: [  # Plains
-        "Bountiful Harvesters", "Grassland Stewards", "Communal Gatherers", 
-        "Fertility Ritualists", "Harmony with Nature", "Open-Field Wanderers", 
-        "Pastoral Nomads", "Weather-Adaptive Farmers", "Crop Innovators"
+        "Experienced Farmers", "Grassland Guardians", "Community Gatherers", 
+        "Agricultural Ritualists", "Nature Harmonizers", "Wide-Open Wanderers", 
+        "Nomadic Herdsmen", "Weather-Adapted Crops", "Crop Cultivators"
     ],
     2: [  # Hills
-        "Terrace Cultivators", "Hill Fort Strategists", "Versatile Raiders", 
-        "Erosion Masters", "Inventive Builders", "Resourceful Miners", 
-        "Rolling Terrain Crafters", "Hillside Traders", "Adaptive Engineers"
+        "Terraced Farmers", "Hilltop Defenders", "Mountain Raiders", 
+        "Erosion Engineers", "Innovative Builders", "Miner Experts", 
+        "Terrain Specialists", "Hillside Traders", "Efficient Engineers"
     ],
     3: [  # Mountains
-        "Peak Guardians", "Summit Survivors", "Defensive Masters", 
-        "Cold Climate Foragers", "Fortification Architects", "Stone Sculptors", 
-        "Mountain Pathfinders", "Self-Sufficient Clans", "Highland Warriors"
+        "Summit Defenders", "Mountain Survivors", "Fortress Builders", 
+        "Cold-Weather Foragers", "Defense Strategists", "Stone Craftsmen", 
+        "Mountain Pathfinders", "Self-Sufficient Nomads", "Alpine Warriors"
     ],
     4: [  # Forest
-        "Canopy Dwellers", "Foraging Experts", "Spiritual Woodkeepers", 
-        "Nature Reverers", "Camouflaged Hunters", "Treecraft Artisans", 
-        "Mystical Pathfinders", "Bark Weavers", "Forest Defenders"
+        "Tree Dwellers", "Experienced Foragers", "Woodland Keepers", 
+        "Nature Worshippers", "Stealthy Hunters", "Woodworkers", 
+        "Mystical Trailblazers", "Bark Artisans", "Forest Guardians"
     ],
     5: [  # Tundra
-        "Frostborn Survivors", "Ice Navigators", "Mystic Snowseekers", 
-        "Scarcity Adaptors", "Winter Foragers", "Arctic Trailblazers", 
-        "Tundra Shamans", "Beast Tamers", "Frozen Wilderness Experts"
+        "Frost Survivors", "Ice Explorers", "Snow Seekers", 
+        "Scarcity Adapters", "Winter Foragers", "Arctic Pathfinders", 
+        "Tundra Shamans", "Beast Trainers", "Frozen Terrain Experts"
     ]
 }
+
 
 
 cmap = ListedColormap([
@@ -213,3 +214,12 @@ civ_names = [
     "Myrrhan League",
     "Brynthar Imperium"
 ]
+
+Cvilization_Class_config = {
+    "Event_Limit": 5, 
+    "Neighbor_Interaction_Limit": 5, 
+    "Starting_Year":-4000,
+    "Year_Progression": 50,
+    "Speed_Multiplier": 1,
+    "Dev_Mode": False
+}

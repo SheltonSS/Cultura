@@ -8,6 +8,7 @@ import misc
 import map_generation
 import json
 from datetime import datetime
+# give the civ a starting date
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -19,20 +20,27 @@ class Civilization:
     Civilizations = []
     Civilizations_by_name = {}
     Default_R = int(min(map.width, map.height) * 1)
-    Default_Turns = 10
     max_tech_level = len(config.Tech_eras)
-    event_limit = 5
-    neighbor_interaction_limit = 5
-    current_year = -4000
-    year_progression = 50
+    event_limit = config.Cvilization_Class_config["Event_Limit"]
+    neighbor_interaction_limit = config.Cvilization_Class_config["Neighbor_Interaction_Limit"]
+    current_year = config.Cvilization_Class_config["Starting_Year"]
+    year_progression = config.Cvilization_Class_config["Year_Progression"]
     existing_artifacts = []
-    speed_multiplier = 1
+    speed_multiplier = config.Cvilization_Class_config["Speed_Multiplier"]
 
     @staticmethod
     def get_string_year():
         """Return the current year in human-readable format."""
         return f"{abs(Civilization.current_year)} {'BC' if Civilization.current_year < 0 else 'AD'}"
-    
+       
+    @staticmethod
+    def calculate_year_progression(speed_multiplier = 1):
+        """Calculate year progression based on the average tech level."""
+        if not Civilization.Civilizations:
+            return(config.Cvilization_Class_config["Year_Progression"])
+        avg_tech_level = sum(civ.tech_level for civ in Civilization.Civilizations) / len(Civilization.Civilizations)
+        return max(1, int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5))) * speed_multiplier
+
     @staticmethod
     def get_unused_civ_name():
         """
@@ -52,64 +60,55 @@ class Civilization:
         If no coordinates are provided, it will place the civilization at a random unoccupied spot.
         Ensures that the spot is available (i.e., not occupied by another civilization).
         """
-        print(f"Placing {civ.name}")
+        # print(f"Placing {civ.name}")
         if x is None or y is None:
-            # Try to get a random unoccupied location
             location = Civilization.get_random_unoccupied_location()
             if location is None:
                 print(f"Could not find a valid location for {civ.name}.")
-                return None  # or raise an exception, or retry based on your use case
+                return None
             x, y = location
         # print(f"Attempting to place {civ.name} at x: {x}, y: {y}")
 
         # Check if the spot is available by ensuring no other civilization is placed at this spot
         if not any(civ.location == (x, y) for civ in Civilization.Civilizations): 
-            civ.location = (x, y)  # Set civilization's location
-            Civilization.map.civ_map[x][y] = civ  # Assign the civilization to this terrain spot
+            civ.location = (x, y)
+            Civilization.map.civ_map[x][y] = civ
             print(f"{civ.name} has been placed at ({x}, {y})")
         else:
             print(f"Unable to place {civ.name} at ({x}, {y}), spot is already occupied.")
-            return Civilization.place_civilization(civ)  # Retry placement if occupied
+            return Civilization.place_civilization(civ)
 
         return (x, y)
 
     @staticmethod
     def get_random_unoccupied_location():
         """Finds and returns a random unoccupied location on the map."""
-        terrain_map = Civilization.map.get_terrain_map()  # Correct way to access the terrain map
+        terrain_map = Civilization.map.get_terrain_map()
         width = len(terrain_map)
         height = len(terrain_map[0]) if width > 0 else 0
         # print(f"width: {width}, height: {height}")
         
-        max_attempts = 100  # Safeguard to prevent infinite loop
+        max_attempts = 100
         attempts = 0
         
         while attempts < max_attempts:
             # Randomly select coordinates
             x = random.randint(0, width - 1)
             y = random.randint(0, height - 1)
-            print(f"Trying x: {x}, y: {y} as an unoccupied location")
+            # print(f"Trying x: {x}, y: {y} as an unoccupied location")
             
-            # Check if the spot is available (no civilization should occupy this spot)
+            # Check if the spot is available
             if not any(civ.location == (x, y) for civ in Civilization.Civilizations):
-                print(f"Found unoccupied location at x: {x}, y: {y}")
+                # print(f"Found unoccupied location at x: {x}, y: {y}")
                 return x, y
             
             attempts += 1
         
-        # If we reach here, no unoccupied spot was found
         print("Max attempts reached without finding an unoccupied location.")
-        return None  # Or you could raise an exception here if desired
+        return None
 
     def __init__(self, name=None, location=None, tech_level=0):
-        """
-        Initialize a civilization with traits and a location.
-        
-        Parameters:
-        - name: Name of the civilization
-        - location: (x, y) tuple on the map
-        - tech_level: Technological advancement level (1-9)
-        """
+        """Initialize a civilization with traits and a location."""
         # Assign name if not provided
         self.name = name or Civilization.get_unused_civ_name()
         print(f"New civilization: {self.name}")
@@ -128,10 +127,11 @@ class Civilization:
         # Generate cultural context and history
         self.cultural_context = self.generate_cultural_context()
         self.artifacts = {"Historical artifacts": [], "Interaction artifacts": []}
-        self.history = [f"Founded {self.name} in a {self.get_terrain_description()} region during the {config.Tech_eras[self.tech_level]} era."]
+        self.history = [f"Founded {self.name} in a {self.get_terrain_description()} region during the {config.Tech_eras[self.tech_level]} era in the year {Civilization.get_string_year()}."]
+        self.string_history = [self.history[0]]
         self.neighbors = []
         self.neighbor_history = []
-        
+        self.string_neighbor_history = []
 
         # Update civilization-wide properties
         Civilization.year_progression = Civilization.calculate_year_progression()
@@ -148,17 +148,17 @@ class Civilization:
         return config.base_traits.get(self.terrain_type, ["Undefined"]) + [random_trait]
     
 
-    def expand_territory(self):
-        """Expand the civilization's territory to nearby tiles."""
-        x, y = self.location
-        expansion_radius = 2
-        for dx in range(-expansion_radius, expansion_radius + 1):
-            for dy in range(-expansion_radius, expansion_radius + 1):
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < Civilization.map.width and 0 <= ny < Civilization.map.height:
-                    if Civilization.map.get_terrain_map()[nx][ny] is None:
-                        Civilization.map.get_terrain_map()[nx][ny] = self
-                        print(f"{self.name} has expanded to ({nx}, {ny})")
+    # def expand_territory(self):
+    #     """Expand the civilization's territory to nearby tiles."""
+    #     x, y = self.location
+    #     expansion_radius = 2
+    #     for dx in range(-expansion_radius, expansion_radius + 1):
+    #         for dy in range(-expansion_radius, expansion_radius + 1):
+    #             nx, ny = x + dx, y + dy
+    #             if 0 <= nx < Civilization.map.width and 0 <= ny < Civilization.map.height:
+    #                 if Civilization.map.get_terrain_map()[nx][ny] is None:
+    #                     Civilization.map.get_terrain_map()[nx][ny] = self
+    #                     print(f"{self.name} has expanded to ({nx}, {ny})")
 
     def find_neighbors(self):
         """Find and add civilizations within a given radius to the neighbors list."""
@@ -196,8 +196,50 @@ class Civilization:
             5: "harsh tundra",
         }
         return descriptions.get(self.terrain_type, "unknown terrain")
+    
+    def summarize_history(self, model="gpt-3.5-turbo", max_tokens=350, temperature=0.5, generation_type="history",history = None):
+        try:
+            # Select the correct history based on generation_type
+            if history is None:
+                history = self.history if generation_type == "history" else self.neighbor_history
 
-    def generate_cultural_artifacts(self, model="gpt-3.5-turbo", max_tokens=350, temperature=0.7, generation_type="history"):
+            # Generate the history string
+            history_string = "; ".join(history)
+
+            # Define the prompt
+            prompt = f"""
+                Summarize the history of a civilization during a specific period based on the following events. 
+                The summary should be concise, capturing the essence of the time while reflecting both the challenges 
+                and achievements. Be sure to mention the advancement and regression of the civilization if provided, key positive 
+                and negative events, and their impacts on the society as a whole. Here's the context:
+
+                {history_string}
+
+                Write the summary as if it is a historical account, keeping it brief. Don't use flowery language.
+            """
+
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+
+            history_summary = response.choices[0].message.content.strip()
+
+            if generation_type == "history":
+                self.string_history.append(history_summary)
+            else:
+                self.string_neighbor_history.append(history_summary)
+
+            return history_summary
+
+        except openai.error.OpenAIError as e:
+            return f"OpenAI API error: {e}"
+        except Exception as e:
+            return f"Unexpected error: {e}"
+
+    def generate_cultural_artifacts(self, model="gpt-3.5-turbo", max_tokens=400, temperature=0.7, generation_type="history"):
         """Generate a unique cultural artifact description using ChatGPT."""
         # regular generation mode
         prompt = f""" 
@@ -218,14 +260,14 @@ class Civilization:
         """
 
         if generation_type == "history":  # history generation mode
-            prompt += f"\nThe response should also consider the civilization's history: {', '.join(self.history)}"
+            prompt += f"\nThe response should also consider the civilization's history:\n {'; '.join(self.string_history)}"
         if generation_type == "neighbor":  # neighbor generation mode
             if len(self.neighbors) == 0:
                 raise ValueError("No neighbors found for this civilization.")
             prompt += "\nThe response should also consider the civilization's interactions with neighboring civilizations:"
             # prompt += f"\nNeighboring Civilizations:\n {[neighbor.cultural_context for neighbor in self.neighbors]}"
             
-            prompt += f"\nNeighboring Civilizations Interaction History:\n {', '.join(self.neighbor_history)}"
+            prompt += f"\nNeighboring Civilizations Interaction History:\n {'; '.join(self.string_neighbor_history)}"
 
         # print (prompt)
         try:
@@ -242,7 +284,15 @@ class Civilization:
             artifact_data["Year Made"] = f"{abs(year_made_I)} {'BC' if year_made_I  < 0 else 'AD'}"
             artifact_data["Civilization Name"] = self.name
             artifact_data["Time_Generated"] = datetime.now().isoformat()
-            print (f"\nArtifact: {artifact_data}")
+
+            # civ cultural traits used to generate artifact
+            artifact_data["Civilization Info"] = {}
+            artifact_data["Civilization Info"]["Traits"] = self.traits
+            artifact_data["Civilization Info"]["Tech Level"] = config.Tech_eras[self.tech_level]
+            artifact_data["Civilization Info"]["Region"] = self.get_terrain_description()
+            artifact_data["Civilization Info"]["Civilization History"] = self.string_history if generation_type == "history" else self.string_neighbor_history
+
+            # print (f"\nArtifact: {artifact_data}")
             artifact_description = json.dumps(artifact_data, indent=2)
 
             if generation_type == "history":
@@ -253,7 +303,7 @@ class Civilization:
                 print(f"Unknown generation type: {generation_type}")
 
             Civilization.existing_artifacts.append(artifact_description)
-            print (f"\nArtifact: {artifact_description}")
+            # print (f"\nArtifact: {artifact_description}")
             return artifact_description
 
         except openai.error.OpenAIError as e:
@@ -302,34 +352,45 @@ class Civilization:
         # Update cultural context
         self.cultural_context = self.generate_cultural_context()
 
-    def progress_age(self,event_limit = None):
-        """Progress the civilization through an age."""
-        # Civilization.current_year += Civilization.year_progression
+    def progress_history(self, event_limit=None):
+        """Progress the civilization through an age, generating history w/ events."""
         event_cnt = 0
         positive_outcomes = 0
         negative_outcomes = 0
+        start_index = len(self.history)
 
+        # Set event limit to class default if not provided
         if event_limit is None:
-             event_limit = Civilization.event_limit
+            event_limit = Civilization.event_limit
 
+        # Process events and track outcomes
         while event_cnt < event_limit:
             event = event_picker.select_event()
             event_cnt += 1
+
+            # Count outcomes and append event to history
             if event["Outcome"] == "Positive":
                 positive_outcomes += 1
             else:
                 negative_outcomes += 1
             self.history.append(f"{event['Outcome']} {event['EventType']}: {event['Event']}")
-        if random.random() > 0.7: # 30% chance to progress or regress
+
+        # Determine whether to progress or regress the era
+        if random.random() < 0.3:  # 30% chance
             if positive_outcomes > negative_outcomes:
                 self.progress_era()
             elif negative_outcomes > positive_outcomes:
                 self.regress_era()
 
-        print(f"\n ================================\n History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
-        for history_entry in self.history:
-            print(history_entry)
+        self.post_progression(history_type = "history",start_index = start_index, end_index = len(self.history))
 
+
+        # # Print history summary for this age
+        # print(f"\n ================================\n History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
+        # for history_entry in self.history:
+        #     print(history_entry)
+
+        # Update the year progression
         Civilization.year_progression = Civilization.calculate_year_progression()
 
     def interact_with_neighbors(self, neighbor_interaction_limit = None):
@@ -337,6 +398,9 @@ class Civilization:
         
         if neighbor_interaction_limit is None:
             neighbor_interaction_limit = Civilization.neighbor_interaction_limit
+        neighbor_interaction_limit //= 2
+
+        start_index = len(self.neighbor_history)
 
         positive_interactions = 0
         negative_interactions = 0
@@ -373,27 +437,36 @@ class Civilization:
                     self.neighbor_history.append(criss_cross)
                     neighbor.neighbor_history.append(criss_cross)
                     criss_cross = ""
-        # Print the neighbor history for this civilization
-        print("\n================\n")
-        for history_entry in self.neighbor_history[-20:]: # only print the last 20 entries
+        
+        self.post_progression(history_type = "neighbor_history",start_index = start_index, end_index = len(self.neighbor_history))
+                    
+        # # Print the neighbor history for this civilization
+        # print("\n=============== Neighbor History ================\n")
+        # for history_entry in self.neighbor_history[-20:]: # only print the last 20 entries
+        #     print(history_entry)
+
+    def post_progression(self, history_type="history",start_index = 0, end_index = -1):
+        print(f"\n ================================\n {history_type} History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
+        history = self.history if history_type == "history" else self.neighbor_history
+        for history_entry in history:
             print(history_entry)
+        print()
+
+        # Summarize events from this age
+        end_index = len(self.history)
+        history_summary = self.history[start_index:end_index]
+        summarized_history = self.summarize_history(history = history_summary, generation_type=history_type)
+        print(summarized_history)
+
 
     @staticmethod
-    def calculate_year_progression(speed_multiplier = 1):
-        """Calculate year progression based on the average tech level."""
-        if not Civilization.Civilizations:
-            return 100
-        avg_tech_level = sum(civ.tech_level for civ in Civilization.Civilizations) / len(Civilization.Civilizations)
-        return max(1, int(50 / (avg_tech_level / Civilization.max_tech_level + 0.5))) * speed_multiplier
-
-    @staticmethod
-    def progress_and_interact_all_civilizations(steps=5):
-        """Run the simulation for all civilizations for a number of steps."""
-        for step in range(steps):
+    def progress_and_interact_all_civilizations(ages=5):
+        """Run the simulation for all civilizations for a number of ages."""
+        for age in range(ages):
             for civilization in Civilization.Civilizations:
-                civilization.progress_age()
+                civilization.progress_history()
                 artifact = civilization.generate_cultural_artifacts()
-                print(f"Generated Artifact JSON: {artifact}")
+                print(f"Generated Artifact (JSON): {artifact}")
             
                 misc.save_generated_artifact(artifact)
                 civilization.interact_with_neighbors()
