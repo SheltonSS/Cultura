@@ -116,30 +116,36 @@ class CulturaSimulation:
         # Run the simulation
         self.progress_simulation()
 
-        # Analyze and create charts
-        self.analyze_artifacts()
-        # self.create_charts()
-
         # ****************** TO DO ****************** #
         #             Run the visualization           #
         #            self.run_visualization()         #
         # ******************************************* #
 
+    def end_simulation(self):
+        """End the simulation and analyze and create charts."""
+        # Analyze and create charts
+        self.analyze_artifacts()
+        self.create_charts()
+
 if __name__ == "__main__":
-    # Start the simulation with desired parameters
-    simulations = 1
-    civs = 1
-    ages = 1
-    for i in range(simulations):
-        print(f"\nStarting simulation #{i + 1} with {civs} civilizations and {ages} ages...\n")
-        simulation = CulturaSimulation(civs=civs, dev_mode=True, ages=ages,speed_multiplier=4)
+    simulations = 5
+    civs = 3
+    ages = 8
+    increasing = False
+    speed_multiplier = 8
+
+    for simulation in range(simulations):
+        print(f"\nStarting simulation #{simulation + 1} with {civs} civilizations and {ages} ages...\n")
+        simulation = CulturaSimulation(civs=civs, dev_mode=True, ages=ages,speed_multiplier=speed_multiplier)
         simulation.start_simulation()
 
-        print("\n\n\n")
-        for civ in Civilization.Civilizations:
-            print(f"{civ.cultural_context}\n")
-            print(f"History: \n    {civ.string_history}\n")
-            print(f"Neighbor History: \n    {civ.string_neighbor_history}\n")
+        # print("\n\n\n")
+        # for civ in Civilization.Civilizations:
+        #     print(f"{civ.cultural_context}\n")
+        #     print(f"History: \n    {civ.string_history}\n")
+        #     print(f"Neighbor History: \n    {civ.string_neighbor_history}\n")
 
-        civs += 1
-        ages = ages ** 2
+        if increasing:
+            civs += 1
+            ages = ages ** 2
+    simulation.end_simulation()

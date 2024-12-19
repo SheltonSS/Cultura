@@ -39,7 +39,7 @@ class ArtifactAnalyzer:
 
     @staticmethod
     def save_artifacts(artifacts, jsonl_file):
-        """Save artifacts to a JSONL file in a serializable format."""
+        """Append new artifacts to a JSONL file in a serializable format."""
         def convert_to_serializable(obj, seen=None):
             """Convert non-serializable objects to JSON-compatible types."""
             if seen is None:
@@ -62,8 +62,11 @@ class ArtifactAnalyzer:
                 return obj
             return str(obj)
         
-        with open(jsonl_file, 'w') as file:
+        with open(jsonl_file, 'a') as file:
             for artifact in artifacts:
+                artifact.pop('Civilization Info', None)
+                artifact.pop('Purpose', None)
+                artifact.pop('Description', None)
                 serializable_artifact = json.dumps(artifact, default=convert_to_serializable)
                 file.write(serializable_artifact + '\n')
 

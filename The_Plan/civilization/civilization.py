@@ -398,7 +398,7 @@ class Civilization:
         
         if neighbor_interaction_limit is None:
             neighbor_interaction_limit = Civilization.neighbor_interaction_limit
-        neighbor_interaction_limit //= 2
+        neighbor_interaction_limit //= len(Civilization.Civilizations)
 
         start_index = len(self.neighbor_history)
 
@@ -448,7 +448,7 @@ class Civilization:
     def post_progression(self, history_type="history",start_index = 0, end_index = -1):
         print(f"\n ================================\n {history_type} History for {self.name}: {Civilization.get_string_year()} - {abs(Civilization.current_year + Civilization.year_progression)} \n================================\n")
         history = self.history if history_type == "history" else self.neighbor_history
-        for history_entry in history:
+        for history_entry in history[start_index:end_index]:
             print(history_entry)
         print()
 

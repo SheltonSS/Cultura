@@ -23,7 +23,7 @@ Tech_eras_string = blank
 json_format = """ 
     Name
     Description
-    purpose
+    Purpose
 """
 # Museum_artifact_format = """
 #     Name
