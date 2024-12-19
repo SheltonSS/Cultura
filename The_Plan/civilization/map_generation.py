@@ -103,44 +103,44 @@ class TerrainMap:
         self.classify_terrain()
         self.generate_forests(forest_probability)
 
-    def visualize(self):
-        """Visualize the terrain map using Pygame."""
-        pygame.init()
+    # def visualize(self):
+    #     """Visualize the terrain map using Pygame."""
+    #     pygame.init()
 
-        # Define colors for different terrain types
-        terrain_colors = {
-            0: (0, 0, 255),   # Water (Blue)
-            1: (0, 255, 0),   # Plains (Green)
-            2: (139, 69, 19), # Hills (Brown)
-            3: (128, 128, 128), # Mountains (Gray)
-            4: (34, 139, 34)  # Forest (Dark Green)
-        }
+    #     # Define colors for different terrain types
+    #     terrain_colors = {
+    #         0: (0, 0, 255),   # Water (Blue)
+    #         1: (0, 255, 0),   # Plains (Green)
+    #         2: (139, 69, 19), # Hills (Brown)
+    #         3: (128, 128, 128), # Mountains (Gray)
+    #         4: (34, 139, 34)  # Forest (Dark Green)
+    #     }
 
-        # Set up the Pygame screen
-        screen = pygame.display.set_mode((self.width * 10, self.height * 10))
-        pygame.display.set_caption("Terrain Map")
+    #     # Set up the Pygame screen
+    #     screen = pygame.display.set_mode((self.width * 10, self.height * 10))
+    #     pygame.display.set_caption("Terrain Map")
 
-        # Draw the terrain map
-        for i in range(self.height):
-            for j in range(self.width):
-                terrain_type = self.terrain_map[i, j]
-                if self.forest_map[i, j] == 4:
-                    terrain_type = 4  # Forests override terrain
+    #     # Draw the terrain map
+    #     for i in range(self.height):
+    #         for j in range(self.width):
+    #             terrain_type = self.terrain_map[i, j]
+    #             if self.forest_map[i, j] == 4:
+    #                 terrain_type = 4  # Forests override terrain
 
-                color = terrain_colors[terrain_type]
-                pygame.draw.rect(screen, color, (j * 10, i * 10, 10, 10))  # Draw the terrain square
+    #             color = terrain_colors[terrain_type]
+    #             pygame.draw.rect(screen, color, (j * 10, i * 10, 10, 10))  # Draw the terrain square
 
-        # Update the screen
-        pygame.display.flip()
+    #     # Update the screen
+    #     pygame.display.flip()
 
-        # Run the Pygame event loop
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+    #     # Run the Pygame event loop
+    #     running = True
+    #     while running:
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.QUIT:
+    #                 running = False
 
-        pygame.quit()
+    #     pygame.quit()
 
     def get_terrain_map(self):
         return self.terrain_map

@@ -134,7 +134,7 @@ class Civilization:
         self.string_neighbor_history = []
 
         # Update civilization-wide properties
-        Civilization.year_progression = Civilization.calculate_year_progression()
+        # Civilization.year_progression = Civilization.calculate_year_progression()
         Civilization.Civilizations.append(self)
         Civilization.Civilizations_by_name[self.name] = self
 
@@ -391,7 +391,7 @@ class Civilization:
         #     print(history_entry)
 
         # Update the year progression
-        Civilization.year_progression = Civilization.calculate_year_progression()
+        # Civilization.year_progression = Civilization.calculate_year_progression()
 
     def interact_with_neighbors(self, neighbor_interaction_limit = None):
         """Interact with neighbors, adding or removing traits based on the interaction type."""
